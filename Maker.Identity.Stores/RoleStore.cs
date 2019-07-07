@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Maker.Identity.Stores
 {
     public class RoleStore :
-        StoreBase<Role, RoleBase, RoleHistory>,
+        StoreBase<MakerDbContext, Role, RoleBase, RoleHistory>,
         IQueryableRoleStore<Role>,
         IRoleClaimStore<Role>
     {
@@ -178,7 +178,7 @@ namespace Maker.Identity.Stores
 
             var newRoleClaim = CreateRoleClaim(role, claim);
 
-            var store = new RoleClaimStore(Context, ErrorDescriber);
+            var store = new RoleClaimStore<MakerDbContext>(Context, ErrorDescriber);
 
             await store.CreateAsync(newRoleClaim, cancellationToken).ConfigureAwait(false);
         }
@@ -193,7 +193,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var store = new RoleClaimStore(Context, ErrorDescriber);
+            var store = new RoleClaimStore<MakerDbContext>(Context, ErrorDescriber);
 
             var claims = await Context.RoleClaims
                 .Where(_ =>

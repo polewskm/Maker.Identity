@@ -3,7 +3,52 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Maker.Identity.Stores.Entities
 {
-    public abstract class UserBase : ISupportAssign<UserBase>
+    public interface IUserBase
+    {
+        string UserId { get; set; }
+
+        string FirstName { get; set; }
+
+        string LastName { get; set; }
+
+        string UserName { get; set; }
+
+        string NormalizedUserName { get; set; }
+
+        string Email { get; set; }
+
+        string NormalizedEmail { get; set; }
+
+        bool EmailConfirmed { get; set; }
+
+        string PasswordHash { get; set; }
+
+        string SecurityStamp { get; set; }
+
+        string PhoneNumber { get; set; }
+
+        bool PhoneNumberConfirmed { get; set; }
+
+        bool TwoFactorEnabled { get; set; }
+
+        DateTimeOffset? LockoutEnd { get; set; }
+
+        bool LockoutEnabled { get; set; }
+
+        int AccessFailedCount { get; set; }
+
+        DateTimeOffset MembershipCreatedWhen { get; set; }
+
+        DateTimeOffset MembershipExpiresWhen { get; set; }
+    }
+
+    public abstract class UserBase : UserBase<UserBase>
+    {
+        // nothing
+    }
+
+    public abstract class UserBase<TBase> : IUserBase, ISupportAssign<TBase>
+        where TBase : UserBase<TBase>
     {
         /// <summary>
         /// Gets or sets the primary key for this user.
@@ -104,7 +149,7 @@ namespace Maker.Identity.Stores.Entities
         /// </summary>
         public override string ToString() => UserName;
 
-        public virtual void Assign(UserBase other)
+        public virtual void Assign(TBase other)
         {
             UserId = other.UserId;
             FirstName = other.FirstName;

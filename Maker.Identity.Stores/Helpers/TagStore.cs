@@ -6,17 +6,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Maker.Identity.Stores.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Stores.Helpers
 {
-    public class TagStore<TEntity, TBase, THistory> : StoreBase<TEntity, TBase, THistory>
+    public class TagStore<TContext, TEntity, TBase, THistory> : StoreBase<TContext, TEntity, TBase, THistory>
+        where TContext : DbContext
         where TBase : Tag<TBase>, ISupportAssign<TBase>
         where TEntity : class, TBase, ISupportConcurrencyToken, new()
         where THistory : class, TBase, IHistoryEntity<TBase>, new()
     {
         private readonly Func<TEntity> _factory;
 
-        public TagStore(MakerDbContext context, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory, Func<TEntity> factory, IdentityErrorDescriber describer = null)
+        public TagStore(TContext context, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory, Func<TEntity> factory, IdentityErrorDescriber describer = null)
             : base(context, retirePredicateFactory, describer)
         {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));

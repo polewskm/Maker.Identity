@@ -4,10 +4,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Stores
 {
+    public class MakerDbContext : MakerDbContext<User, UserBase, UserHistory>
+    {
+        public MakerDbContext(DbContextOptions options)
+            : base(options)
+        {
+            // nothing
+        }
+    }
+
     /// <summary>
     /// Class for the Entity Framework database context used for identity.
     /// </summary>
-    public class MakerDbContext : DbContext
+    public class MakerDbContext<TUser, TUserBase, TUserHistory> : DbContext
+        where TUser : class, TUserBase, ISupportConcurrencyToken
+        where TUserBase : class, IUserBase, ISupportAssign<TUserBase>
+        where TUserHistory : class, TUserBase, IHistoryEntity<TUserBase>
     {
         /// <summary>
         /// Initializes a new instance of <see cref="MakerDbContext"/>.
@@ -22,12 +34,12 @@ namespace Maker.Identity.Stores
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}" /> of users.
         /// </summary>
-        public DbSet<User> Users { get; set; }
+        public DbSet<TUser> Users { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}" /> of user history.
         /// </summary>
-        public DbSet<UserHistory> UserHistory { get; set; }
+        public DbSet<TUserHistory> UserHistory { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}" /> of user claims.
@@ -75,7 +87,6 @@ namespace Maker.Identity.Stores
 
         //
 
-
         /// <summary>
         /// Gets or sets the <see cref="DbSet{Secret}"/> of secrets.
         /// </summary>
@@ -114,7 +125,7 @@ namespace Maker.Identity.Stores
         {
             const string schemaName = "Identity";
 
-            builder.EntityWithHistory<User, UserBase, UserHistory>("UserHistory", schemaName, entity =>
+            builder.EntityWithHistory<TUser, TUserBase, TUserHistory>("UserHistory", schemaName, entity =>
             {
                 entity.ToTable("Users", schemaName);
 

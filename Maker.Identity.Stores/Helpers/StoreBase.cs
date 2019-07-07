@@ -15,9 +15,16 @@ namespace Maker.Identity.Stores.Helpers
         Task SaveChangesAsync(CancellationToken cancellationToken);
     }
 
-    public abstract class StoreBase : IStore
+    public abstract class StoreBase<TContext, TEntity, TBase, THistory> : IStore
+        where TContext : DbContext
+        where TBase : ISupportAssign<TBase>
+        where TEntity : class, TBase
+        where THistory : class, TBase, IHistoryEntity<TBase>, new()
     {
-        protected MakerDbContext Context { get; }
+        private readonly DateTimeOffset _now = DateTimeOffset.Now;
+        private readonly Func<TEntity, Expression<Func<THistory, bool>>> _retirePredicateFactory;
+
+        protected TContext Context { get; }
 
         public bool AutoSaveChanges { get; set; } = true;
 
@@ -30,30 +37,13 @@ namespace Maker.Identity.Stores.Helpers
         /// 
         /// </summary>
         /// <param name="context">The context used to access the store.</param>
+        /// <param name="retirePredicateFactory"></param>
         /// <param name="describer">The <see cref="IdentityErrorDescriber"/> used to describe store errors.</param>
-        protected StoreBase(MakerDbContext context, IdentityErrorDescriber describer = null)
+        protected StoreBase(TContext context, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory, IdentityErrorDescriber describer = null)
         {
             Context = context ?? throw new ArgumentNullException(nameof(context));
             ErrorDescriber = describer ?? new IdentityErrorDescriber();
-        }
 
-        public virtual Task SaveChangesAsync(CancellationToken cancellationToken)
-        {
-            return AutoSaveChanges ? Context.SaveChangesAsync(cancellationToken) : Task.CompletedTask;
-        }
-    }
-
-    public abstract class StoreBase<TEntity, TBase, THistory> : StoreBase
-        where TBase : ISupportAssign<TBase>
-        where TEntity : class, TBase, new()
-        where THistory : class, TBase, IHistoryEntity<TBase>, new()
-    {
-        private readonly DateTimeOffset _now = DateTimeOffset.Now;
-        private readonly Func<TEntity, Expression<Func<THistory, bool>>> _retirePredicateFactory;
-
-        protected StoreBase(MakerDbContext context, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory, IdentityErrorDescriber describer = null)
-            : base(context, describer)
-        {
             _retirePredicateFactory = retirePredicateFactory ?? throw new ArgumentNullException(nameof(retirePredicateFactory));
         }
 
@@ -87,6 +77,11 @@ namespace Maker.Identity.Stores.Helpers
 
                 Context.Set<THistory>().Update(item);
             }
+        }
+
+        public virtual Task SaveChangesAsync(CancellationToken cancellationToken)
+        {
+            return AutoSaveChanges ? Context.SaveChangesAsync(cancellationToken) : Task.CompletedTask;
         }
 
         public virtual async Task<TEntity> FindByIdAsync(object keyValue, CancellationToken cancellationToken)

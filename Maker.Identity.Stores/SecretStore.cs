@@ -50,7 +50,7 @@ namespace Maker.Identity.Stores
         Task UpdateTagsAsync(string secretId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken);
     }
 
-    public class SecretStore : StoreBase<Secret, SecretBase, SecretHistory>, ISecretStore
+    public class SecretStore : StoreBase<MakerDbContext, Secret, SecretBase, SecretHistory>, ISecretStore
     {
         private static readonly Func<Secret, Expression<Func<SecretHistory, bool>>> RetirePredicateFactory =
             client => history => history.SecretId == client.SecretId && history.RetiredWhen == Constants.MaxDateTimeOffset;
@@ -88,7 +88,7 @@ namespace Maker.Identity.Stores
                 .ToDictionaryAsync(_ => _.NormalizedKey, _ => _, StringComparer.Ordinal, cancellationToken)
                 .ConfigureAwait(false);
 
-            var store = new TagStore<SecretTag, SecretTagBase, SecretTagHistory>(Context, RetirePredicateFactory, TagFactory);
+            var store = new TagStore<MakerDbContext, SecretTag, SecretTagBase, SecretTagHistory>(Context, RetirePredicateFactory, TagFactory);
 
             await store.UpdateTagsAsync(tags, existingTags, cancellationToken).ConfigureAwait(false);
         }

@@ -50,7 +50,7 @@ namespace Maker.Identity.Stores
         Task UpdateTagsAsync(string clientId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken);
     }
 
-    public class ClientStore : StoreBase<Client, ClientBase, ClientHistory>, IClientStore
+    public class ClientStore : StoreBase<MakerDbContext, Client, ClientBase, ClientHistory>, IClientStore
     {
         private static readonly Func<Client, Expression<Func<ClientHistory, bool>>> RetirePredicateFactory =
             client => history => history.ClientId == client.ClientId && history.RetiredWhen == Constants.MaxDateTimeOffset;
@@ -88,7 +88,7 @@ namespace Maker.Identity.Stores
                 .ToDictionaryAsync(_ => _.NormalizedKey, _ => _, StringComparer.Ordinal, cancellationToken)
                 .ConfigureAwait(false);
 
-            var store = new TagStore<ClientTag, ClientTagBase, ClientTagHistory>(Context, RetirePredicateFactory, TagFactory);
+            var store = new TagStore<MakerDbContext, ClientTag, ClientTagBase, ClientTagHistory>(Context, RetirePredicateFactory, TagFactory);
 
             await store.UpdateTagsAsync(tags, existingTags, cancellationToken).ConfigureAwait(false);
         }
