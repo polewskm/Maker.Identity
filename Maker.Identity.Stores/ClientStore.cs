@@ -50,6 +50,15 @@ namespace Maker.Identity.Stores
         Task UpdateTagsAsync(long clientId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken);
     }
 
+    public interface IClientSecretStore : IClientStore
+    {
+        Task<IEnumerable<Secret>> GetSecretsAsync(long clientId, CancellationToken cancellationToken = default);
+
+        Task AddSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default);
+
+        Task RemoveSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default);
+    }
+
     public class ClientStore : ClientStore<MakerDbContext>
     {
         public ClientStore(MakerDbContext context, IdentityErrorDescriber describer = null)
@@ -59,7 +68,7 @@ namespace Maker.Identity.Stores
         }
     }
 
-    public class ClientStore<TContext> : StoreBase<TContext, Client, ClientBase, ClientHistory>, IClientStore
+    public class ClientStore<TContext> : StoreBase<TContext, Client, ClientBase, ClientHistory>, IClientSecretStore
         where TContext : DbContext
     {
         private static readonly Func<Client, Expression<Func<ClientHistory, bool>>> RetirePredicateFactory =
@@ -70,6 +79,8 @@ namespace Maker.Identity.Stores
         {
             // nothing
         }
+
+        #region IClientStore Members
 
         public virtual async Task<Client> FindByIdAsync(long clientId, CancellationToken cancellationToken)
         {
@@ -106,6 +117,49 @@ namespace Maker.Identity.Stores
 
             await store.UpdateTagsAsync(tags, existingTags, cancellationToken).ConfigureAwait(false);
         }
+
+        #endregion
+
+        #region IClientSecretStore Members
+
+        public virtual async Task<IEnumerable<Secret>> GetSecretsAsync(long clientId, CancellationToken cancellationToken = default)
+        {
+            var query = from clientSecret in Context.Set<ClientSecret>()
+                        join secret in Context.Set<Secret>() on clientSecret.SecretId equals secret.SecretId
+                        where clientSecret.ClientId == clientId
+                        select secret;
+
+            return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public virtual async Task AddSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default)
+        {
+            var newClientSecret = new ClientSecret
+            {
+                ClientId = clientId,
+                SecretId = secretId,
+            };
+
+            var store = new ClientSecretStore<TContext>(Context, ErrorDescriber);
+
+            await store.CreateAsync(newClientSecret, cancellationToken).ConfigureAwait(false);
+        }
+
+        public virtual async Task RemoveSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default)
+        {
+            var clientSecret = await Context.Set<ClientSecret>()
+                .SingleOrDefaultAsync(_ => _.ClientId == clientId && _.SecretId == secretId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (clientSecret != null)
+            {
+                var store = new ClientSecretStore<TContext>(Context, ErrorDescriber);
+
+                await store.DeleteAsync(clientSecret, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        #endregion
 
     }
 }

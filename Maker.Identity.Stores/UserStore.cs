@@ -39,7 +39,7 @@ namespace Maker.Identity.Stores
         IUserAuthenticatorKeyStore<TUser>,
         IUserTwoFactorRecoveryCodeStore<TUser>
 
-        where TContext : DbContext
+        where TContext : DbContext, IUserDbContext<TUser, TUserBase, TUserHistory>
         where TUser : class, TUserBase, ISupportConcurrencyToken
         where TUserBase : class, IUserBase, ISupportAssign<TUserBase>
         where TUserHistory : class, TUserBase, IHistoryEntity<TUserBase>, new()
@@ -142,7 +142,7 @@ namespace Maker.Identity.Stores
         /// <returns>The role if it exists.</returns>
         protected virtual Task<Role> FindRoleAsync(string normalizedRoleName, CancellationToken cancellationToken)
         {
-            return Context.Set<Role>().SingleOrDefaultAsync(
+            return Context.Roles.SingleOrDefaultAsync(
                 role => role.NormalizedName == normalizedRoleName,
                 cancellationToken);
         }
@@ -156,7 +156,7 @@ namespace Maker.Identity.Stores
         /// <returns>The user role if it exists.</returns>
         protected virtual Task<UserRole> FindUserRoleAsync(long userId, long roleId, CancellationToken cancellationToken)
         {
-            return Context.Set<UserRole>().FindAsync(new object[] { userId, roleId }, cancellationToken);
+            return Context.UserRoles.FindAsync(new object[] { userId, roleId }, cancellationToken);
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace Maker.Identity.Stores
         /// <returns>The user token if it exists.</returns>
         protected virtual Task<UserToken> FindTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken)
         {
-            return Context.Set<UserToken>().FindAsync(
+            return Context.UserTokens.FindAsync(
                 new object[] { user.UserId, loginProvider, name },
                 cancellationToken);
         }
@@ -268,7 +268,7 @@ namespace Maker.Identity.Stores
 
             var id = ConvertIdFromString(userId);
 
-            return await Context.Set<TUser>()
+            return await Context.Users
                 .FirstOrDefaultAsync(_ => _.UserId == id, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -281,7 +281,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.Set<TUser>()
+            return await Context.Users
                 .FirstOrDefaultAsync(user => user.NormalizedUserName == normalizedUserName, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -344,8 +344,8 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var query = from userRole in Context.Set<UserRole>()
-                        join role in Context.Set<Role>() on userRole.RoleId equals role.RoleId
+            var query = from userRole in Context.UserRoles
+                        join role in Context.Roles on userRole.RoleId equals role.RoleId
                         where userRole.UserId == user.UserId
                         select role.Name;
 
@@ -382,8 +382,8 @@ namespace Maker.Identity.Stores
             if (role == null)
                 return Array.Empty<TUser>();
 
-            var query = from userRole in Context.Set<UserRole>()
-                        join user in Context.Set<TUser>() on userRole.UserId equals user.UserId
+            var query = from userRole in Context.UserRoles
+                        join user in Context.Users on userRole.UserId equals user.UserId
                         where userRole.RoleId == role.RoleId
                         select user;
 
@@ -419,7 +419,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var userLogin = await Context.Set<UserLogin>()
+            var userLogin = await Context.UserLogins
                 .SingleOrDefaultAsync(login =>
                     login.UserId == user.UserId
                         && login.LoginProvider == loginProvider
@@ -442,7 +442,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.Set<UserLogin>()
+            return await Context.UserLogins
                 .Where(login => login.UserId == user.UserId)
                 .Select(login => new UserLoginInfo(
                     login.LoginProvider,
@@ -457,10 +457,9 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var query = from logins in Context.Set<UserLogin>()
-                        join user in Context.Set<TUser>() on logins.UserId equals user.UserId
-                        where logins.LoginProvider == loginProvider
-                              && logins.ProviderKey == providerKey
+            var query = from login in Context.UserLogins
+                        join user in Context.Users on login.UserId equals user.UserId
+                        where login.LoginProvider == loginProvider && login.ProviderKey == providerKey
                         select user;
 
             return await query.SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
@@ -478,7 +477,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.Set<UserClaim>()
+            return await Context.UserClaims
                 .Where(userClaim => userClaim.UserId == user.UserId)
                 .Select(userClaim => userClaim.ToClaim())
                 .ToListAsync(cancellationToken)
@@ -514,7 +513,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var matchedClaims = await Context.Set<UserClaim>()
+            var matchedClaims = await Context.UserClaims
                 .Where(userClaim =>
                     userClaim.UserId == user.UserId
                     && userClaim.ClaimType == claim.Type
@@ -547,7 +546,7 @@ namespace Maker.Identity.Stores
 
             foreach (var claim in claims)
             {
-                var matchedClaims = await Context.Set<UserClaim>()
+                var matchedClaims = await Context.UserClaims
                     .Where(userClaim =>
                         userClaim.UserId == user.UserId
                         && userClaim.ClaimType == claim.Type
@@ -567,10 +566,9 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var query = from userClaims in Context.Set<UserClaim>()
-                        join user in Context.Set<TUser>() on userClaims.UserId equals user.UserId
-                        where userClaims.ClaimValue == claim.Value
-                              && userClaims.ClaimType == claim.Type
+            var query = from userClaim in Context.UserClaims
+                        join user in Context.Users on userClaim.UserId equals user.UserId
+                        where userClaim.ClaimValue == claim.Value && userClaim.ClaimType == claim.Type
                         select user;
 
             return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
@@ -727,7 +725,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.Set<TUser>()
+            return await Context.Users
                 .Where(user => user.NormalizedEmail == normalizedEmail)
                 .SingleOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -878,7 +876,7 @@ namespace Maker.Identity.Stores
 
         #region IQueryableUserStore Members
 
-        public IQueryable<TUser> Users => Context.Set<TUser>();
+        public IQueryable<TUser> Users => Context.Users;
 
         #endregion
 
@@ -924,7 +922,7 @@ namespace Maker.Identity.Stores
             if (token == null)
             {
                 var newToken = CreateUserToken(user, loginProvider, name, value);
-                Context.Set<UserToken>().Add(newToken);
+                Context.UserTokens.Add(newToken);
             }
             else
             {
@@ -943,7 +941,7 @@ namespace Maker.Identity.Stores
             var token = await FindTokenAsync(user, loginProvider, name, cancellationToken).ConfigureAwait(false);
             if (token != null)
             {
-                Context.Set<UserToken>().Remove(token);
+                Context.UserTokens.Remove(token);
             }
         }
 

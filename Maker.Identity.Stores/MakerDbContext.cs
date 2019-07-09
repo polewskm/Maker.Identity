@@ -5,6 +5,38 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Stores
 {
+    public interface IUserDbContext<TUser, TUserBase, TUserHistory>
+        where TUser : class, TUserBase, ISupportConcurrencyToken
+        where TUserBase : class, IUserBase, ISupportAssign<TUserBase>
+        where TUserHistory : class, TUserBase, IHistoryEntity<TUserBase>
+    {
+        DbSet<TUser> Users { get; set; }
+
+        DbSet<TUserHistory> UserHistory { get; set; }
+
+        DbSet<UserClaim> UserClaims { get; set; }
+
+        DbSet<UserClaimHistory> UserClaimHistory { get; set; }
+
+        DbSet<UserLogin> UserLogins { get; set; }
+
+        DbSet<UserLoginHistory> UserLoginHistory { get; set; }
+
+        DbSet<UserToken> UserTokens { get; set; }
+
+        DbSet<UserTokenHistory> UserTokenHistory { get; set; }
+
+        //
+
+        DbSet<Role> Roles { get; set; }
+
+        DbSet<RoleHistory> RoleHistory { get; set; }
+
+        DbSet<UserRole> UserRoles { get; set; }
+
+        DbSet<UserRoleHistory> UserRoleHistory { get; set; }
+    }
+
     public class MakerDbContext : MakerDbContext<User, UserBase, UserHistory>
     {
         public MakerDbContext(DbContextOptions options, IIdGenerator<long> idGenerator)
@@ -17,7 +49,7 @@ namespace Maker.Identity.Stores
     /// <summary>
     /// Class for the Entity Framework database context used for identity.
     /// </summary>
-    public class MakerDbContext<TUser, TUserBase, TUserHistory> : DbContext
+    public class MakerDbContext<TUser, TUserBase, TUserHistory> : DbContext, IUserDbContext<TUser, TUserBase, TUserHistory>
         where TUser : class, TUserBase, ISupportConcurrencyToken
         where TUserBase : class, IUserBase, ISupportAssign<TUserBase>
         where TUserHistory : class, TUserBase, IHistoryEntity<TUserBase>
