@@ -1,4 +1,5 @@
-﻿using IdGen;
+﻿using System;
+using IdGen;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 
@@ -10,7 +11,7 @@ namespace Maker.Identity.Stores
 
         public IdValueGenerator(IIdGenerator<long> generator)
         {
-            _generator = generator;
+            _generator = generator ?? throw new ArgumentNullException(nameof(generator));
         }
 
         public override bool GeneratesTemporaryValues => false;
