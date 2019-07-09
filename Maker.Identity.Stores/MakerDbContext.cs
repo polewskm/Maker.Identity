@@ -244,12 +244,9 @@ namespace Maker.Identity.Stores
                 entity.Property(_ => _.PhoneNumberConfirmed).IsRequired();
 
                 entity.Property(_ => _.TwoFactorEnabled).IsRequired();
-                entity.Property(_ => _.LockoutEnd).IsRequired();
+                entity.Property(_ => _.LockoutEndUtc);
                 entity.Property(_ => _.LockoutEnabled).IsRequired();
                 entity.Property(_ => _.AccessFailedCount).IsRequired();
-
-                entity.Property(_ => _.MembershipCreatedWhen).IsRequired();
-                entity.Property(_ => _.MembershipExpiresWhen).IsRequired();
 
                 entity.HasMany<UserClaim>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();
                 entity.HasMany<UserLogin>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();

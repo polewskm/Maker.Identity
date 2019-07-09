@@ -31,15 +31,11 @@ namespace Maker.Identity.Stores.Entities
 
         bool TwoFactorEnabled { get; set; }
 
-        DateTimeOffset? LockoutEnd { get; set; }
+        DateTime? LockoutEndUtc { get; set; }
 
         bool LockoutEnabled { get; set; }
 
         int AccessFailedCount { get; set; }
-
-        DateTimeOffset MembershipCreatedWhen { get; set; }
-
-        DateTimeOffset MembershipExpiresWhen { get; set; }
     }
 
     public abstract class UserBase : UserBase<UserBase>
@@ -127,7 +123,7 @@ namespace Maker.Identity.Stores.Entities
         /// <remarks>
         /// A value in the past means the user is not locked out.
         /// </remarks>
-        public DateTimeOffset? LockoutEnd { get; set; }
+        public DateTime? LockoutEndUtc { get; set; }
 
         /// <summary>
         /// Gets or sets a flag indicating if the user could be locked out.
@@ -139,10 +135,6 @@ namespace Maker.Identity.Stores.Entities
         /// Gets or sets the number of failed login attempts for the current user.
         /// </summary>
         public int AccessFailedCount { get; set; }
-
-        public DateTimeOffset MembershipCreatedWhen { get; set; }
-
-        public DateTimeOffset MembershipExpiresWhen { get; set; }
 
         /// <summary>
         /// Returns the username for this user.
@@ -164,12 +156,9 @@ namespace Maker.Identity.Stores.Entities
             PhoneNumber = other.PhoneNumber;
             PhoneNumberConfirmed = other.PhoneNumberConfirmed;
             TwoFactorEnabled = other.TwoFactorEnabled;
-            LockoutEnd = other.LockoutEnd;
+            LockoutEndUtc = other.LockoutEndUtc;
             LockoutEnabled = other.LockoutEnabled;
             AccessFailedCount = other.AccessFailedCount;
-
-            MembershipCreatedWhen = other.MembershipCreatedWhen;
-            MembershipExpiresWhen = other.MembershipExpiresWhen;
         }
     }
 
@@ -185,9 +174,9 @@ namespace Maker.Identity.Stores.Entities
         public long TransactionId { get; set; }
 
         /// <inheritdoc/>
-        public DateTimeOffset CreatedWhen { get; set; }
+        public DateTime CreatedWhenUtc { get; set; }
 
         /// <inheritdoc/>
-        public DateTimeOffset RetiredWhen { get; set; }
+        public DateTime RetiredWhenUtc { get; set; }
     }
 }

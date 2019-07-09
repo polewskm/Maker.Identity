@@ -7,8 +7,8 @@ namespace Maker.Identity.Stores.Entities
     {
         long TransactionId { get; set; }
 
-        DateTimeOffset CreatedWhen { get; set; }
+        DateTime CreatedWhenUtc { get; set; }
 
-        DateTimeOffset RetiredWhen { get; set; }
+        DateTime RetiredWhenUtc { get; set; }
     }
 }

@@ -33,7 +33,7 @@ namespace Maker.Identity.Stores
         where TRoleHistory : class, TRoleBase, IHistoryEntity<TRoleBase>, new()
     {
         private static readonly Func<TRole, Expression<Func<TRoleHistory, bool>>> RetirePredicateFactory =
-            role => history => history.RoleId == role.RoleId && history.RetiredWhen == Constants.MaxDateTimeOffset;
+            role => history => history.RoleId == role.RoleId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
         private bool _disposed;
 

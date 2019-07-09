@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Maker.Identity.Stores.Entities;
+using Maker.Identity.Stores.Extensions;
 using Maker.Identity.Stores.Helpers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -54,7 +55,7 @@ namespace Maker.Identity.Stores
         private const string RecoveryCodeTokenName = "RecoveryCodes";
 
         private static readonly Func<TUser, Expression<Func<TUserHistory, bool>>> RetirePredicateFactory =
-            user => history => history.UserId == user.UserId && history.RetiredWhen == Constants.MaxDateTimeOffset;
+            user => history => history.UserId == user.UserId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
         private bool _disposed;
 
@@ -748,7 +749,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return Task.FromResult(user.LockoutEnd);
+            return Task.FromResult(user.LockoutEndUtc?.ToDateTimeOffset(TimeSpan.Zero));
         }
 
         public virtual Task SetLockoutEndDateAsync(TUser user, DateTimeOffset? lockoutEnd, CancellationToken cancellationToken)
@@ -759,7 +760,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            user.LockoutEnd = lockoutEnd;
+            user.LockoutEndUtc = lockoutEnd?.UtcDateTime;
 
             return Task.CompletedTask;
         }

@@ -11,7 +11,7 @@ namespace Maker.Identity.Stores
         where TContext : DbContext
     {
         private static readonly Func<ClientSecret, Expression<Func<ClientSecretHistory, bool>>> RetirePredicateFactory =
-            client => history => history.ClientId == client.ClientId && history.SecretId == client.SecretId && history.RetiredWhen == Constants.MaxDateTimeOffset;
+            client => history => history.ClientId == client.ClientId && history.SecretId == client.SecretId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
         public ClientSecretStore(TContext context, IdentityErrorDescriber describer = null)
             : base(context, RetirePredicateFactory, describer)

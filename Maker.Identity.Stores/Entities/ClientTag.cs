@@ -29,10 +29,10 @@ namespace Maker.Identity.Stores.Entities
         public long TransactionId { get; set; }
 
         /// <inheritdoc/>
-        public DateTimeOffset CreatedWhen { get; set; }
+        public DateTime CreatedWhenUtc { get; set; }
 
         /// <inheritdoc/>
-        public DateTimeOffset RetiredWhen { get; set; }
+        public DateTime RetiredWhenUtc { get; set; }
     }
 
 }

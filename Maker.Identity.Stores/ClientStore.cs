@@ -72,7 +72,7 @@ namespace Maker.Identity.Stores
         where TContext : DbContext, IClientSecretDbContext
     {
         private static readonly Func<Client, Expression<Func<ClientHistory, bool>>> RetirePredicateFactory =
-            client => history => history.ClientId == client.ClientId && history.RetiredWhen == Constants.MaxDateTimeOffset;
+            client => history => history.ClientId == client.ClientId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
         public ClientStore(TContext context, IdentityErrorDescriber describer = null)
             : base(context, RetirePredicateFactory, describer)
@@ -106,7 +106,7 @@ namespace Maker.Identity.Stores
             Expression<Func<ClientTagHistory, bool>> RetirePredicateFactory(ClientTag tag) => history =>
                 history.ClientId == tag.ClientId
                 && history.NormalizedKey == tag.NormalizedKey
-                && history.RetiredWhen == Constants.MaxDateTimeOffset;
+                && history.RetiredWhenUtc == Constants.MaxDateTime;
 
             var existingTags = await Context.ClientTags
                 .Where(_ => _.ClientId == clientId)

@@ -11,7 +11,7 @@ namespace Maker.Identity.Stores
         where TContext : DbContext
     {
         private static readonly Func<UserClaim, Expression<Func<UserClaimHistory, bool>>> RetirePredicateFactory =
-            roleClaim => history => history.UserClaimId == roleClaim.UserClaimId && history.RetiredWhen == Constants.MaxDateTimeOffset;
+            roleClaim => history => history.UserClaimId == roleClaim.UserClaimId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
         public UserClaimStore(TContext context, IdentityErrorDescriber describer = null)
             : base(context, RetirePredicateFactory, describer)

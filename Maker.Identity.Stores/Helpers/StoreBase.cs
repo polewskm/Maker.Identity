@@ -22,7 +22,7 @@ namespace Maker.Identity.Stores.Helpers
         where TEntity : class, TBase
         where THistory : class, TBase, IHistoryEntity<TBase>, new()
     {
-        private readonly DateTimeOffset _now = DateTimeOffset.Now;
+        private readonly DateTime _now = DateTime.UtcNow;
         private readonly Func<TEntity, Expression<Func<THistory, bool>>> _retirePredicateFactory;
 
         protected TContext Context { get; }
@@ -64,8 +64,8 @@ namespace Maker.Identity.Stores.Helpers
         {
             var newHistory = new THistory
             {
-                CreatedWhen = _now,
-                RetiredWhen = Constants.MaxDateTimeOffset,
+                CreatedWhenUtc = _now,
+                RetiredWhenUtc = Constants.MaxDateTime,
             };
             newHistory.Assign(entity);
 
@@ -88,7 +88,7 @@ namespace Maker.Identity.Stores.Helpers
 
             foreach (var item in itemsToRetire)
             {
-                item.RetiredWhen = _now;
+                item.RetiredWhenUtc = _now;
 
                 cancellationToken.ThrowIfCancellationRequested();
 

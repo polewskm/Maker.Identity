@@ -8,6 +8,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Maker.Identity.Stores.Extensions
 {
+    public static class DateTimeExtensions
+    {
+        public static DateTimeOffset ToDateTimeOffset(this DateTime dateTime, TimeSpan offset)
+        {
+            return new DateTimeOffset(dateTime, offset);
+        }
+
+    }
     public static class ModelBuilderExtensions
     {
         public static PropertyBuilder<T> IsConcurrencyStamp<T>(this PropertyBuilder<T> propertyBuilder)
@@ -98,8 +106,8 @@ namespace Maker.Identity.Stores.Extensions
                         historyKeyProperties.Add(historyProperty);
                     }
 
-                    historyBuilder.Property(_ => _.CreatedWhen).IsRequired();
-                    var propRetiredWhen = historyBuilder.Property(_ => _.RetiredWhen).IsRequired();
+                    historyBuilder.Property(_ => _.CreatedWhenUtc).IsRequired();
+                    var propRetiredWhen = historyBuilder.Property(_ => _.RetiredWhenUtc).IsRequired();
 
                     historyKeyProperties.Add(propRetiredWhen.Metadata);
                     historyKeyProperties.Add(propTransactionId.Metadata);
