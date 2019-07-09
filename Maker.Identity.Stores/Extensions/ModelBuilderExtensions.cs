@@ -18,14 +18,19 @@ namespace Maker.Identity.Stores.Extensions
     }
     public static class ModelBuilderExtensions
     {
+        public static PropertyBuilder<T> SkipHistory<T>(this PropertyBuilder<T> propertyBuilder, bool skipHistory = true)
+        {
+            return propertyBuilder.HasAnnotation("MakerIdentity:SkipHistory", skipHistory);
+        }
+
         public static PropertyBuilder<T> IsConcurrencyStamp<T>(this PropertyBuilder<T> propertyBuilder)
         {
-            return propertyBuilder.HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken();
+            return propertyBuilder.HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken().SkipHistory();
         }
 
         public static PropertyBuilder<T> UseIdGen<T>(this PropertyBuilder<T> propertyBuilder, bool useIdGen = true)
         {
-            return propertyBuilder.ValueGeneratedNever().HasAnnotation("UseIdGen", useIdGen);
+            return propertyBuilder.ValueGeneratedNever().HasAnnotation("MakerIdentity:UseIdGen", useIdGen);
         }
 
         public static void UseIdGen(this ModelBuilder modelBuilder, IdValueGenerator idValueGenerator)
@@ -33,7 +38,7 @@ namespace Maker.Identity.Stores.Extensions
             var properties = modelBuilder.Model.GetEntityTypes()
                 .SelectMany(entityType => entityType.GetProperties()
                     .Where(prop => prop.GetAnnotations()
-                        .Any(annotation => annotation.Name == "UseIdGen" && (bool?)annotation.Value == true)));
+                        .Any(annotation => annotation.Name == "MakerIdentity:UseIdGen" && annotation.Value as bool? == true)));
 
             foreach (var property in properties)
             {
@@ -79,8 +84,8 @@ namespace Maker.Identity.Stores.Extensions
 
                     foreach (var entityProperty in entityProperties)
                     {
-                        // the history table doesn't need to keep track of concurrency tokens
-                        if (entityProperty.IsConcurrencyToken) continue;
+                        if (entityProperty.GetAnnotations().Any(annotation => annotation.Name == "MakerIdentity:SkipHistory" && annotation.Value as bool? == true))
+                            continue;
 
                         var historyProperty = historyMetadata.FindProperty(entityProperty.Name);
                         if (historyProperty == null)
