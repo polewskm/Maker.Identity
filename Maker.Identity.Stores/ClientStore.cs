@@ -19,7 +19,7 @@ namespace Maker.Identity.Stores
         /// <param name="clientId">The client ID to look for.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>A <see cref="Task{TResult}"/> that result of the look up.</returns>
-        Task<Client> FindByIdAsync(string clientId, CancellationToken cancellationToken);
+        Task<Client> FindByIdAsync(long clientId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Creates a new client in a store as an asynchronous operation.
@@ -71,17 +71,12 @@ namespace Maker.Identity.Stores
             // nothing
         }
 
-        public virtual async Task<Client> FindByIdAsync(string clientId, CancellationToken cancellationToken)
+        public virtual async Task<Client> FindByIdAsync(long clientId, CancellationToken cancellationToken)
         {
-            if (clientId == null)
-                throw new ArgumentNullException(nameof(clientId));
-
             cancellationToken.ThrowIfCancellationRequested();
 
-            var id = ConvertIdFromString(clientId);
-
             return await Context.Set<Client>()
-                .FirstOrDefaultAsync(_ => _.ClientId == id, cancellationToken)
+                .FirstOrDefaultAsync(_ => _.ClientId == clientId, cancellationToken)
                 .ConfigureAwait(false);
         }
 

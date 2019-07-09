@@ -19,7 +19,7 @@ namespace Maker.Identity.Stores
         /// <param name="secretId">The secret ID to look for.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>A <see cref="Task{TResult}"/> that result of the look up.</returns>
-        Task<Secret> FindByIdAsync(string secretId, CancellationToken cancellationToken);
+        Task<Secret> FindByIdAsync(long secretId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Creates a new secret in a store as an asynchronous operation.
@@ -71,17 +71,12 @@ namespace Maker.Identity.Stores
             // nothing
         }
 
-        public virtual async Task<Secret> FindByIdAsync(string secretId, CancellationToken cancellationToken)
+        public virtual async Task<Secret> FindByIdAsync(long secretId, CancellationToken cancellationToken)
         {
-            if (secretId == null)
-                throw new ArgumentNullException(nameof(secretId));
-
             cancellationToken.ThrowIfCancellationRequested();
 
-            var id = ConvertIdFromString(secretId);
-
             return await Context.Set<Secret>()
-                .FirstOrDefaultAsync(_ => _.SecretId == id, cancellationToken)
+                .FirstOrDefaultAsync(_ => _.SecretId == secretId, cancellationToken)
                 .ConfigureAwait(false);
         }
 
