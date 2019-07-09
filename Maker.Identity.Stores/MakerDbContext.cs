@@ -71,58 +71,58 @@ namespace Maker.Identity.Stores
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}"/> of roles.
         /// </summary>
-        public virtual DbSet<Role> Roles { get; set; }
+        public DbSet<Role> Roles { get; set; }
 
-        public virtual DbSet<RoleHistory> RoleHistory { get; set; }
+        public DbSet<RoleHistory> RoleHistory { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}"/> of user roles.
         /// </summary>
-        public virtual DbSet<UserRole> UserRoles { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }
 
-        public virtual DbSet<UserRoleHistory> UserRoleHistory { get; set; }
+        public DbSet<UserRoleHistory> UserRoleHistory { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}"/> of role claims.
         /// </summary>
-        public virtual DbSet<RoleClaim> RoleClaims { get; set; }
+        public DbSet<RoleClaim> RoleClaims { get; set; }
 
-        public virtual DbSet<RoleClaimHistory> RoleClaimHistory { get; set; }
+        public DbSet<RoleClaimHistory> RoleClaimHistory { get; set; }
 
         //
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{Secret}"/> of secrets.
         /// </summary>
-        public virtual DbSet<Secret> Secrets { get; set; }
+        public DbSet<Secret> Secrets { get; set; }
 
-        public virtual DbSet<SecretHistory> SecretHistory { get; set; }
+        public DbSet<SecretHistory> SecretHistory { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{SecretTag}"/> of secret tags.
         /// </summary>
-        public virtual DbSet<SecretTag> SecretTags { get; set; }
+        public DbSet<SecretTag> SecretTags { get; set; }
 
-        public virtual DbSet<SecretTagHistory> SecretTagHistory { get; set; }
+        public DbSet<SecretTagHistory> SecretTagHistory { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{Client}"/> of clients.
         /// </summary>
-        public virtual DbSet<Client> Clients { get; set; }
+        public DbSet<Client> Clients { get; set; }
 
-        public virtual DbSet<ClientHistory> ClientHistory { get; set; }
+        public DbSet<ClientHistory> ClientHistory { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{ClientTag}"/> of client tags.
         /// </summary>
-        public virtual DbSet<ClientTag> ClientTags { get; set; }
+        public DbSet<ClientTag> ClientTags { get; set; }
 
-        public virtual DbSet<ClientTagHistory> ClientTagHistory { get; set; }
+        public DbSet<ClientTagHistory> ClientTagHistory { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{ClientSecret}"/> of client secrets.
         /// </summary>
-        public virtual DbSet<ClientSecret> ClientSecrets { get; set; }
+        public DbSet<ClientSecret> ClientSecrets { get; set; }
 
         /// <inheritdoc/>
         protected override void OnModelCreating(ModelBuilder builder)

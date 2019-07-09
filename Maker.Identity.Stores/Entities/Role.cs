@@ -22,17 +22,17 @@ namespace Maker.Identity.Stores.Entities
         /// <summary>
         /// Gets or sets the primary key for this role.
         /// </summary>
-        public virtual long RoleId { get; set; }
+        public long RoleId { get; set; }
 
         /// <summary>
         /// Gets or sets the normalized name for this role.
         /// </summary>
-        public virtual string NormalizedName { get; set; }
+        public string NormalizedName { get; set; }
 
         /// <summary>
         /// Gets or sets the name for this role.
         /// </summary>
-        public virtual string Name { get; set; }
+        public string Name { get; set; }
 
         /// <inheritdoc/>
         public virtual void Assign(TBase other)

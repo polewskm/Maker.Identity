@@ -10,22 +10,22 @@ namespace Maker.Identity.Stores.Entities
         /// <summary>
         /// Gets or sets the primary key of the user associated with this login.
         /// </summary>
-        public virtual long UserId { get; set; }
+        public long UserId { get; set; }
 
         /// <summary>
         /// Gets or sets the login provider for the login (e.g. facebook, google)
         /// </summary>
-        public virtual string LoginProvider { get; set; }
+        public string LoginProvider { get; set; }
 
         /// <summary>
         /// Gets or sets the unique provider identifier for this login.
         /// </summary>
-        public virtual string ProviderKey { get; set; }
+        public string ProviderKey { get; set; }
 
         /// <summary>
         /// Gets or sets the friendly name used in a UI for this login.
         /// </summary>
-        public virtual string ProviderDisplayName { get; set; }
+        public string ProviderDisplayName { get; set; }
 
         public virtual void Assign(UserLoginBase other)
         {
