@@ -2,12 +2,27 @@
 
 namespace Maker.Identity.Stores.Entities
 {
-    public abstract class RoleBase : ISupportAssign<RoleBase>
+    public interface IRoleBase
+    {
+        long RoleId { get; set; }
+
+        string NormalizedName { get; set; }
+
+        string Name { get; set; }
+    }
+
+    public abstract class RoleBase : RoleBase<RoleBase>
+    {
+        // nothing
+    }
+
+    public abstract class RoleBase<TBase> : IRoleBase, ISupportAssign<TBase>
+        where TBase : RoleBase<TBase>
     {
         /// <summary>
         /// Gets or sets the primary key for this role.
         /// </summary>
-        public virtual string RoleId { get; set; }
+        public virtual long RoleId { get; set; }
 
         /// <summary>
         /// Gets or sets the normalized name for this role.
@@ -20,7 +35,7 @@ namespace Maker.Identity.Stores.Entities
         public virtual string Name { get; set; }
 
         /// <inheritdoc/>
-        public virtual void Assign(RoleBase other)
+        public virtual void Assign(TBase other)
         {
             RoleId = other.RoleId;
             NormalizedName = other.NormalizedName;
@@ -40,7 +55,7 @@ namespace Maker.Identity.Stores.Entities
     public class RoleHistory : RoleBase, IHistoryEntity<RoleBase>
     {
         /// <inheritdoc/>
-        public string TransactionId { get; set; } = Guid.NewGuid().ToString();
+        public long TransactionId { get; set; }
 
         /// <inheritdoc/>
         public DateTimeOffset CreatedWhen { get; set; }

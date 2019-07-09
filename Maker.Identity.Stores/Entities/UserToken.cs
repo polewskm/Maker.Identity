@@ -11,7 +11,7 @@ namespace Maker.Identity.Stores.Entities
         /// <summary>
         /// Gets or sets the primary key of the user that the token belongs to.
         /// </summary>
-        public virtual string UserId { get; set; }
+        public virtual long UserId { get; set; }
 
         /// <summary>Gets or sets the LoginProvider this token is from.</summary>
         public virtual string LoginProvider { get; set; }
@@ -40,7 +40,7 @@ namespace Maker.Identity.Stores.Entities
     public class UserTokenHistory : UserTokenBase, IHistoryEntity<UserTokenBase>
     {
         /// <inheritdoc/>
-        public string TransactionId { get; set; }
+        public long TransactionId { get; set; }
 
         /// <inheritdoc/>
         public DateTimeOffset CreatedWhen { get; set; }

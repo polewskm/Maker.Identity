@@ -11,12 +11,12 @@ namespace Maker.Identity.Stores.Entities
         /// <summary>
         /// Gets or sets the identifier for this user claim.
         /// </summary>
-        public virtual int Id { get; set; }
+        public virtual long UserClaimId { get; set; }
 
         /// <summary>
         /// Gets or sets the primary key of the user associated with this claim.
         /// </summary>
-        public virtual string UserId { get; set; }
+        public virtual long UserId { get; set; }
 
         /// <summary>
         /// Gets or sets the claim type for this claim.
@@ -30,7 +30,7 @@ namespace Maker.Identity.Stores.Entities
 
         public virtual void Assign(UserClaimBase other)
         {
-            Id = other.Id;
+            UserClaimId = other.UserClaimId;
             UserId = other.UserId;
             ClaimType = other.ClaimType;
             ClaimValue = other.ClaimValue;
@@ -62,7 +62,7 @@ namespace Maker.Identity.Stores.Entities
     public class UserClaimHistory : UserClaimBase, IHistoryEntity<UserClaimBase>
     {
         /// <inheritdoc/>
-        public string TransactionId { get; set; }
+        public long TransactionId { get; set; }
 
         /// <inheritdoc/>
         public DateTimeOffset CreatedWhen { get; set; }

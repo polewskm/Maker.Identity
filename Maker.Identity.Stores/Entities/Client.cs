@@ -4,10 +4,7 @@ namespace Maker.Identity.Stores.Entities
 {
     public abstract class ClientBase : ISupportAssign<ClientBase>
     {
-        /// <summary>
-        /// Gets or sets the primary key for this instance.
-        /// </summary>
-        public string ClientId { get; set; } = Guid.NewGuid().ToString();
+        public long ClientId { get; set; }
 
         public bool Disabled { get; set; }
 
@@ -30,7 +27,7 @@ namespace Maker.Identity.Stores.Entities
     public class ClientHistory : ClientBase, IHistoryEntity<ClientBase>
     {
         /// <inheritdoc/>
-        public string TransactionId { get; set; } = Guid.NewGuid().ToString();
+        public long TransactionId { get; set; }
 
         /// <inheritdoc/>
         public DateTimeOffset CreatedWhen { get; set; }

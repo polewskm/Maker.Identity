@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Maker.Identity.Stores.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -9,13 +10,36 @@ namespace Maker.Identity.Stores.Extensions
 {
     public static class ModelBuilderExtensions
     {
+        public static PropertyBuilder<T> IsConcurrencyStamp<T>(this PropertyBuilder<T> propertyBuilder)
+        {
+            return propertyBuilder.HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken();
+        }
+
+        public static PropertyBuilder<T> UseIdGen<T>(this PropertyBuilder<T> propertyBuilder, bool useIdGen = true)
+        {
+            return propertyBuilder.ValueGeneratedNever().HasAnnotation("UseIdGen", useIdGen);
+        }
+
+        public static void UseIdGen(this ModelBuilder modelBuilder, IdValueGenerator idValueGenerator)
+        {
+            var properties = modelBuilder.Model.GetEntityTypes()
+                .SelectMany(entityType => entityType.GetProperties()
+                    .Where(prop => prop.GetAnnotations()
+                        .Any(annotation => annotation.Name == "UseIdGen" && (bool?)annotation.Value == true)));
+
+            foreach (var property in properties)
+            {
+                property.SetValueGeneratorFactory((prop, type) => idValueGenerator);
+            }
+        }
+
         public static EntityTypeBuilder<TEntity> AsTag<TEntity>(this EntityTypeBuilder<TEntity> builder, string name, string schema)
             where TEntity : Tag, ISupportConcurrencyToken
         {
             builder.ToTable(name, schema);
 
             builder.Property(_ => _.NormalizedKey).HasMaxLength(256).IsRequired().IsUnicode(false);
-            builder.Property(_ => _.ConcurrencyStamp).HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken();
+            builder.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
             builder.Property(_ => _.Key).HasMaxLength(256).IsRequired().IsUnicode(false);
             builder.Property(_ => _.Value).HasMaxLength(256).IsRequired().IsUnicode(false);
@@ -42,7 +66,7 @@ namespace Maker.Identity.Stores.Extensions
 
                     historyBuilder.ToTable(historyTableName, historySchemaName);
 
-                    var propTransactionId = historyBuilder.Property(_ => _.TransactionId).HasMaxLength(50).IsRequired().IsUnicode(false);
+                    var propTransactionId = historyBuilder.Property(_ => _.TransactionId).UseIdGen();
 
                     foreach (var entityProperty in entityProperties)
                     {

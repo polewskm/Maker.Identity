@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -47,6 +48,18 @@ namespace Maker.Identity.Stores.Helpers
             _retirePredicateFactory = retirePredicateFactory ?? throw new ArgumentNullException(nameof(retirePredicateFactory));
         }
 
+        /// <summary>
+        /// Converts the provided <paramref name="id"/> to a strongly typed <see cref="long"/>.
+        /// </summary>
+        public virtual long ConvertIdFromString(string id)
+            => id == null ? 0L : (long)(TypeDescriptor.GetConverter(typeof(long)).ConvertFromInvariantString(id) ?? 0L);
+
+        /// <summary>
+        /// Converts the provided <paramref name="id"/> to its string representation.
+        /// </summary>
+        public virtual string ConvertIdToString(long id)
+            => id == 0L ? null : id.ToString();
+
         private Task CreateHistoryAsync(TEntity entity, CancellationToken cancellationToken)
         {
             var newHistory = new THistory
@@ -55,6 +68,8 @@ namespace Maker.Identity.Stores.Helpers
                 RetiredWhen = Constants.MaxDateTimeOffset,
             };
             newHistory.Assign(entity);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             Context.Set<THistory>().Add(newHistory);
 
@@ -75,6 +90,8 @@ namespace Maker.Identity.Stores.Helpers
             {
                 item.RetiredWhen = _now;
 
+                cancellationToken.ThrowIfCancellationRequested();
+
                 Context.Set<THistory>().Update(item);
             }
         }
@@ -82,16 +99,6 @@ namespace Maker.Identity.Stores.Helpers
         public virtual Task SaveChangesAsync(CancellationToken cancellationToken)
         {
             return AutoSaveChanges ? Context.SaveChangesAsync(cancellationToken) : Task.CompletedTask;
-        }
-
-        public virtual async Task<TEntity> FindByIdAsync(object keyValue, CancellationToken cancellationToken)
-        {
-            return await Context.Set<TEntity>().FindAsync(new[] { keyValue }, cancellationToken).ConfigureAwait(false);
-        }
-
-        public virtual async Task<TEntity> FindByIdAsync(object[] keyValues, CancellationToken cancellationToken)
-        {
-            return await Context.Set<TEntity>().FindAsync(keyValues, cancellationToken).ConfigureAwait(false);
         }
 
         public virtual Task<IdentityResult> CreateAsync(TEntity entity, CancellationToken cancellationToken)

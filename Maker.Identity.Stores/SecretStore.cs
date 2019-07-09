@@ -45,37 +45,56 @@ namespace Maker.Identity.Stores
         /// <returns>A <see cref="Task{TResult}"/> that represents the <see cref="IdentityResult"/> of the asynchronous operation.</returns>
         Task<IdentityResult> DeleteAsync(Secret secret, CancellationToken cancellationToken);
 
-        Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(string secretId, CancellationToken cancellationToken);
+        Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(long secretId, CancellationToken cancellationToken);
 
-        Task UpdateTagsAsync(string secretId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken);
+        Task UpdateTagsAsync(long secretId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken);
     }
 
-    public class SecretStore : StoreBase<MakerDbContext, Secret, SecretBase, SecretHistory>, ISecretStore
+    public class SecretStore : SecretStore<MakerDbContext>
+    {
+        public SecretStore(MakerDbContext context, IdentityErrorDescriber describer = null)
+            : base(context, describer)
+        {
+            // nothing
+        }
+    }
+
+    public class SecretStore<TContext> : StoreBase<TContext, Secret, SecretBase, SecretHistory>, ISecretStore
+        where TContext : DbContext
     {
         private static readonly Func<Secret, Expression<Func<SecretHistory, bool>>> RetirePredicateFactory =
             client => history => history.SecretId == client.SecretId && history.RetiredWhen == Constants.MaxDateTimeOffset;
 
-        public SecretStore(MakerDbContext context, IdentityErrorDescriber describer = null)
+        public SecretStore(TContext context, IdentityErrorDescriber describer = null)
             : base(context, RetirePredicateFactory, describer)
         {
             // nothing
         }
 
-        public virtual Task<Secret> FindByIdAsync(string secretId, CancellationToken cancellationToken)
+        public virtual async Task<Secret> FindByIdAsync(string secretId, CancellationToken cancellationToken)
         {
-            return base.FindByIdAsync(secretId, cancellationToken);
+            if (secretId == null)
+                throw new ArgumentNullException(nameof(secretId));
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var id = ConvertIdFromString(secretId);
+
+            return await Context.Set<Secret>()
+                .FirstOrDefaultAsync(_ => _.SecretId == id, cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        public virtual async Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(string secretId, CancellationToken cancellationToken)
+        public virtual async Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(long secretId, CancellationToken cancellationToken)
         {
-            return await Context.SecretTags
+            return await Context.Set<SecretTag>()
                 .Where(_ => _.SecretId == secretId)
                 .Select(tag => new KeyValuePair<string, string>(tag.Key, tag.Value))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
 
-        public virtual async Task UpdateTagsAsync(string secretId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken)
+        public virtual async Task UpdateTagsAsync(long secretId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken)
         {
             SecretTag TagFactory() => new SecretTag { SecretId = secretId };
             Expression<Func<SecretTagHistory, bool>> RetirePredicateFactory(SecretTag tag) => history =>
@@ -83,12 +102,12 @@ namespace Maker.Identity.Stores
                 && history.NormalizedKey == tag.NormalizedKey
                 && history.RetiredWhen == Constants.MaxDateTimeOffset;
 
-            var existingTags = await Context.SecretTags
+            var existingTags = await Context.Set<SecretTag>()
                 .Where(_ => _.SecretId == secretId)
                 .ToDictionaryAsync(_ => _.NormalizedKey, _ => _, StringComparer.Ordinal, cancellationToken)
                 .ConfigureAwait(false);
 
-            var store = new TagStore<MakerDbContext, SecretTag, SecretTagBase, SecretTagHistory>(Context, RetirePredicateFactory, TagFactory);
+            var store = new TagStore<TContext, SecretTag, SecretTagBase, SecretTagHistory>(Context, RetirePredicateFactory, TagFactory);
 
             await store.UpdateTagsAsync(tags, existingTags, cancellationToken).ConfigureAwait(false);
         }

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using IdGen;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace Maker.Identity.Stores
@@ -10,7 +11,9 @@ namespace Maker.Identity.Stores
             var optionsBuilder = new DbContextOptionsBuilder<MakerDbContext>();
             optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Maker.Identity;Trusted_Connection=True;MultipleActiveResultSets=true");
 
-            return new MakerDbContext(optionsBuilder.Options);
+            var idGenerator = new IdGenerator(0);
+
+            return new MakerDbContext(optionsBuilder.Options, idGenerator);
         }
 
     }

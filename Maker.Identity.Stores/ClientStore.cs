@@ -45,37 +45,56 @@ namespace Maker.Identity.Stores
         /// <returns>A <see cref="Task{TResult}"/> that represents the <see cref="IdentityResult"/> of the asynchronous operation.</returns>
         Task<IdentityResult> DeleteAsync(Client client, CancellationToken cancellationToken);
 
-        Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(string clientId, CancellationToken cancellationToken);
+        Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(long clientId, CancellationToken cancellationToken);
 
-        Task UpdateTagsAsync(string clientId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken);
+        Task UpdateTagsAsync(long clientId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken);
     }
 
-    public class ClientStore : StoreBase<MakerDbContext, Client, ClientBase, ClientHistory>, IClientStore
+    public class ClientStore : ClientStore<MakerDbContext>
+    {
+        public ClientStore(MakerDbContext context, IdentityErrorDescriber describer = null)
+            : base(context, describer)
+        {
+            // nothing
+        }
+    }
+
+    public class ClientStore<TContext> : StoreBase<TContext, Client, ClientBase, ClientHistory>, IClientStore
+        where TContext : DbContext
     {
         private static readonly Func<Client, Expression<Func<ClientHistory, bool>>> RetirePredicateFactory =
             client => history => history.ClientId == client.ClientId && history.RetiredWhen == Constants.MaxDateTimeOffset;
 
-        public ClientStore(MakerDbContext context, IdentityErrorDescriber describer = null)
+        public ClientStore(TContext context, IdentityErrorDescriber describer = null)
             : base(context, RetirePredicateFactory, describer)
         {
             // nothing
         }
 
-        public virtual Task<Client> FindByIdAsync(string clientId, CancellationToken cancellationToken)
+        public virtual async Task<Client> FindByIdAsync(string clientId, CancellationToken cancellationToken)
         {
-            return base.FindByIdAsync(clientId, cancellationToken);
+            if (clientId == null)
+                throw new ArgumentNullException(nameof(clientId));
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var id = ConvertIdFromString(clientId);
+
+            return await Context.Set<Client>()
+                .FirstOrDefaultAsync(_ => _.ClientId == id, cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        public virtual async Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(string clientId, CancellationToken cancellationToken)
+        public virtual async Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(long clientId, CancellationToken cancellationToken)
         {
-            return await Context.ClientTags
+            return await Context.Set<ClientTag>()
                 .Where(_ => _.ClientId == clientId)
                 .Select(tag => new KeyValuePair<string, string>(tag.Key, tag.Value))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
 
-        public virtual async Task UpdateTagsAsync(string clientId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken)
+        public virtual async Task UpdateTagsAsync(long clientId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken)
         {
             ClientTag TagFactory() => new ClientTag { ClientId = clientId };
             Expression<Func<ClientTagHistory, bool>> RetirePredicateFactory(ClientTag tag) => history =>
@@ -83,12 +102,12 @@ namespace Maker.Identity.Stores
                 && history.NormalizedKey == tag.NormalizedKey
                 && history.RetiredWhen == Constants.MaxDateTimeOffset;
 
-            var existingTags = await Context.ClientTags
+            var existingTags = await Context.Set<ClientTag>()
                 .Where(_ => _.ClientId == clientId)
                 .ToDictionaryAsync(_ => _.NormalizedKey, _ => _, StringComparer.Ordinal, cancellationToken)
                 .ConfigureAwait(false);
 
-            var store = new TagStore<MakerDbContext, ClientTag, ClientTagBase, ClientTagHistory>(Context, RetirePredicateFactory, TagFactory);
+            var store = new TagStore<TContext, ClientTag, ClientTagBase, ClientTagHistory>(Context, RetirePredicateFactory, TagFactory);
 
             await store.UpdateTagsAsync(tags, existingTags, cancellationToken).ConfigureAwait(false);
         }

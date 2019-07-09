@@ -154,7 +154,7 @@ namespace Maker.Identity.Stores
         /// <param name="roleId">The role's id.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The user role if it exists.</returns>
-        protected virtual Task<UserRole> FindUserRoleAsync(string userId, string roleId, CancellationToken cancellationToken)
+        protected virtual Task<UserRole> FindUserRoleAsync(long userId, long roleId, CancellationToken cancellationToken)
         {
             return Context.Set<UserRole>().FindAsync(new object[] { userId, roleId }, cancellationToken);
         }
@@ -207,7 +207,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return Task.FromResult(user.UserId);
+            return Task.FromResult(ConvertIdToString(user.UserId));
         }
 
         public virtual Task<string> GetUserNameAsync(TUser user, CancellationToken cancellationToken)
@@ -258,7 +258,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
-        public virtual Task<TUser> FindByIdAsync(string userId, CancellationToken cancellationToken)
+        public virtual async Task<TUser> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
             if (userId == null)
                 throw new ArgumentNullException(nameof(userId));
@@ -266,10 +266,14 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return base.FindByIdAsync(userId, cancellationToken);
+            var id = ConvertIdFromString(userId);
+
+            return await Context.Set<TUser>()
+                .FirstOrDefaultAsync(_ => _.UserId == id, cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        public virtual Task<TUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
+        public virtual async Task<TUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
             if (normalizedUserName == null)
                 throw new ArgumentNullException(nameof(normalizedUserName));
@@ -277,7 +281,9 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return Context.Set<TUser>().FirstOrDefaultAsync(user => user.NormalizedUserName == normalizedUserName, cancellationToken);
+            return await Context.Set<TUser>()
+                .FirstOrDefaultAsync(user => user.NormalizedUserName == normalizedUserName, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         #endregion

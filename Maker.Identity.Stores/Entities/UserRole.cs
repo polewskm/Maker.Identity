@@ -10,12 +10,12 @@ namespace Maker.Identity.Stores.Entities
         /// <summary>
         /// Gets or sets the primary key of the user that is linked to a role.
         /// </summary>
-        public virtual string UserId { get; set; }
+        public virtual long UserId { get; set; }
 
         /// <summary>
         /// Gets or sets the primary key of the role that is linked to the user.
         /// </summary>
-        public virtual string RoleId { get; set; }
+        public virtual long RoleId { get; set; }
 
         /// <inheritdoc/>
         public virtual void Assign(UserRoleBase other)
@@ -33,7 +33,7 @@ namespace Maker.Identity.Stores.Entities
     public class UserRoleHistory : UserRoleBase, IHistoryEntity<UserRoleBase>
     {
         /// <inheritdoc/>
-        public string TransactionId { get; set; }
+        public long TransactionId { get; set; }
 
         /// <inheritdoc/>
         public DateTimeOffset CreatedWhen { get; set; }

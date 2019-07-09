@@ -1,4 +1,5 @@
-﻿using Maker.Identity.Stores.Entities;
+﻿using IdGen;
+using Maker.Identity.Stores.Entities;
 using Maker.Identity.Stores.Extensions;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,8 +7,8 @@ namespace Maker.Identity.Stores
 {
     public class MakerDbContext : MakerDbContext<User, UserBase, UserHistory>
     {
-        public MakerDbContext(DbContextOptions options)
-            : base(options)
+        public MakerDbContext(DbContextOptions options, IIdGenerator<long> idGenerator)
+            : base(options, idGenerator)
         {
             // nothing
         }
@@ -21,14 +22,17 @@ namespace Maker.Identity.Stores
         where TUserBase : class, IUserBase, ISupportAssign<TUserBase>
         where TUserHistory : class, TUserBase, IHistoryEntity<TUserBase>
     {
+        private readonly IdValueGenerator _idValueGenerator;
+
         /// <summary>
         /// Initializes a new instance of <see cref="MakerDbContext"/>.
         /// </summary>
         /// <param name="options">The options to be used by a <see cref="DbContext"/>.</param>
-        public MakerDbContext(DbContextOptions options)
+        /// <param name="idGenerator"></param>
+        public MakerDbContext(DbContextOptions options, IIdGenerator<long> idGenerator)
             : base(options)
         {
-            // nothing
+            _idValueGenerator = new IdValueGenerator(idGenerator);
         }
 
         /// <summary>
@@ -133,8 +137,8 @@ namespace Maker.Identity.Stores
                 entity.HasIndex(_ => _.NormalizedUserName).HasName("U_NormalizedUserName").IsUnique();
                 entity.HasIndex(_ => _.NormalizedEmail).HasName("U_NormalizedEmail");
 
-                entity.Property(_ => _.UserId).HasMaxLength(50).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.ConcurrencyStamp).HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken();
+                entity.Property(_ => _.UserId).UseIdGen();
+                entity.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
                 entity.Property(_ => _.FirstName).HasMaxLength(256).IsRequired().IsUnicode();
                 entity.Property(_ => _.LastName).HasMaxLength(256).IsRequired().IsUnicode();
@@ -169,8 +173,9 @@ namespace Maker.Identity.Stores
             builder.EntityWithHistory<UserClaim, UserClaimBase, UserClaimHistory>("UserClaimHistory", schemaName, entity =>
             {
                 entity.ToTable("UserClaims", schemaName);
-                entity.HasKey(_ => _.Id);
+                entity.HasKey(_ => _.UserClaimId);
 
+                entity.Property(_ => _.UserClaimId).UseIdGen();
                 entity.Property(_ => _.ClaimType).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entity.Property(_ => _.ClaimValue).IsRequired().IsUnicode(false);
             });
@@ -182,7 +187,7 @@ namespace Maker.Identity.Stores
 
                 entity.Property(_ => _.LoginProvider).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entity.Property(_ => _.ProviderKey).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.ProviderDisplayName).HasMaxLength(256).IsRequired().IsUnicode(true);
+                entity.Property(_ => _.ProviderDisplayName).HasMaxLength(256).IsRequired().IsUnicode();
             });
 
             builder.EntityWithHistory<UserToken, UserTokenBase, UserTokenHistory>("UserTokenHistory", schemaName, entity =>
@@ -190,7 +195,6 @@ namespace Maker.Identity.Stores
                 entity.ToTable("UserTokens", schemaName);
                 entity.HasKey(_ => new { _.UserId, _.LoginProvider, _.Name });
 
-                entity.Property(_ => _.UserId).HasMaxLength(50).IsRequired().IsUnicode(false);
                 entity.Property(_ => _.LoginProvider).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entity.Property(_ => _.Name).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entity.Property(_ => _.Value).IsRequired().IsUnicode(false);
@@ -199,11 +203,12 @@ namespace Maker.Identity.Stores
             builder.EntityWithHistory<Role, RoleBase, RoleHistory>("RoleHistory", schemaName, entity =>
             {
                 entity.ToTable("Roles", schemaName);
+
                 entity.HasKey(_ => _.RoleId);
                 entity.HasIndex(_ => _.NormalizedName).HasName("U_NormalizedName").IsUnique();
 
-                entity.Property(_ => _.RoleId).HasMaxLength(50).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.ConcurrencyStamp).HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken();
+                entity.Property(_ => _.RoleId).UseIdGen();
+                entity.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
                 entity.Property(_ => _.Name).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entity.Property(_ => _.NormalizedName).HasMaxLength(256).IsRequired().IsUnicode(false);
@@ -215,8 +220,9 @@ namespace Maker.Identity.Stores
             builder.EntityWithHistory<RoleClaim, RoleClaimBase, RoleClaimHistory>("RoleClaimHistory", schemaName, entity =>
             {
                 entity.ToTable("RoleClaims", schemaName);
-                entity.HasKey(_ => _.Id);
+                entity.HasKey(_ => _.RoleClaimId);
 
+                entity.Property(_ => _.RoleClaimId).UseIdGen();
                 entity.Property(_ => _.ClaimType).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entity.Property(_ => _.ClaimValue).IsRequired().IsUnicode(false);
             });
@@ -225,9 +231,6 @@ namespace Maker.Identity.Stores
             {
                 entity.ToTable("UserRoles", schemaName);
                 entity.HasKey(_ => new { _.UserId, _.RoleId });
-
-                entity.Property(_ => _.UserId).HasMaxLength(50).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.RoleId).HasMaxLength(50).IsRequired().IsUnicode(false);
             });
 
             builder.EntityWithHistory<Secret, SecretBase, SecretHistory>("SecretHistory", schemaName, entity =>
@@ -235,8 +238,8 @@ namespace Maker.Identity.Stores
                 entity.ToTable("Secrets", schemaName);
                 entity.HasKey(_ => _.SecretId);
 
-                entity.Property(_ => _.SecretId).HasMaxLength(50).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.ConcurrencyStamp).HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken();
+                entity.Property(_ => _.SecretId).UseIdGen();
+                entity.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
                 entity.Property(_ => _.CipherType).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entity.Property(_ => _.CipherText).IsRequired().IsUnicode(false);
@@ -246,7 +249,6 @@ namespace Maker.Identity.Stores
             {
                 entity.AsTag("SecretTags", schemaName);
                 entity.HasKey(_ => new { _.SecretId, _.NormalizedKey });
-                entity.Property(_ => _.SecretId).HasMaxLength(50).IsRequired().IsUnicode(false);
                 entity.HasOne<Secret>().WithMany().HasForeignKey(_ => _.SecretId).IsRequired();
             });
 
@@ -255,8 +257,8 @@ namespace Maker.Identity.Stores
                 entity.ToTable("Clients", schemaName);
                 entity.HasKey(_ => _.ClientId);
 
-                entity.Property(_ => _.ClientId).HasMaxLength(50).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.ConcurrencyStamp).HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken();
+                entity.Property(_ => _.ClientId).UseIdGen();
+                entity.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
                 entity.Property(_ => _.Disabled).IsRequired();
                 entity.Property(_ => _.RequireSecret).IsRequired();
@@ -266,7 +268,6 @@ namespace Maker.Identity.Stores
             {
                 entity.AsTag("ClientTags", schemaName);
                 entity.HasKey(_ => new { _.ClientId, _.NormalizedKey });
-                entity.Property(_ => _.ClientId).HasMaxLength(50).IsRequired().IsUnicode(false);
                 entity.HasOne<Client>().WithMany().HasForeignKey(_ => _.ClientId).IsRequired();
             });
 
@@ -278,6 +279,8 @@ namespace Maker.Identity.Stores
                 entity.HasOne<Client>().WithMany().HasForeignKey(_ => _.ClientId).IsRequired();
                 entity.HasOne<Secret>().WithMany().HasForeignKey(_ => _.SecretId).IsRequired();
             });
+
+            builder.UseIdGen(_idValueGenerator);
         }
 
     }

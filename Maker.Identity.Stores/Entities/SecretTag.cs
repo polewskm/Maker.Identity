@@ -7,7 +7,7 @@ namespace Maker.Identity.Stores.Entities
         /// <summary>
         /// Gets or sets the primary key of the secret that tag belongs to.
         /// </summary>
-        public string SecretId { get; set; }
+        public long SecretId { get; set; }
 
         public override void Assign(SecretTagBase other)
         {
@@ -26,7 +26,7 @@ namespace Maker.Identity.Stores.Entities
     public class SecretTagHistory : SecretTagBase, IHistoryEntity<SecretTagBase>
     {
         /// <inheritdoc/>
-        public string TransactionId { get; set; } = Guid.NewGuid().ToString();
+        public long TransactionId { get; set; }
 
         /// <inheritdoc/>
         public DateTimeOffset CreatedWhen { get; set; }

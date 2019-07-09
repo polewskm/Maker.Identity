@@ -5,7 +5,7 @@ namespace Maker.Identity.Stores.Entities
 {
     public interface IUserBase
     {
-        string UserId { get; set; }
+        long UserId { get; set; }
 
         string FirstName { get; set; }
 
@@ -54,7 +54,7 @@ namespace Maker.Identity.Stores.Entities
         /// Gets or sets the primary key for this user.
         /// </summary>
         [PersonalData]
-        public virtual string UserId { get; set; } = Guid.NewGuid().ToString();
+        public virtual long UserId { get; set; }
 
         [ProtectedPersonalData]
         public string FirstName { get; set; }
@@ -182,7 +182,7 @@ namespace Maker.Identity.Stores.Entities
     public class UserHistory : UserBase, IHistoryEntity<UserBase>
     {
         /// <inheritdoc/>
-        public string TransactionId { get; set; } = Guid.NewGuid().ToString();
+        public long TransactionId { get; set; }
 
         /// <inheritdoc/>
         public DateTimeOffset CreatedWhen { get; set; }

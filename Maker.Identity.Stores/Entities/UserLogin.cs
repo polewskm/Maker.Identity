@@ -10,7 +10,7 @@ namespace Maker.Identity.Stores.Entities
         /// <summary>
         /// Gets or sets the primary key of the user associated with this login.
         /// </summary>
-        public virtual string UserId { get; set; }
+        public virtual long UserId { get; set; }
 
         /// <summary>
         /// Gets or sets the login provider for the login (e.g. facebook, google)
@@ -44,7 +44,7 @@ namespace Maker.Identity.Stores.Entities
     public class UserLoginHistory : UserLoginBase, IHistoryEntity<UserLoginBase>
     {
         /// <inheritdoc/>
-        public string TransactionId { get; set; }
+        public long TransactionId { get; set; }
 
         /// <inheritdoc/>
         public DateTimeOffset CreatedWhen { get; set; }

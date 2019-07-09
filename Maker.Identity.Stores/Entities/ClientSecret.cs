@@ -2,8 +2,8 @@
 {
     public class ClientSecret
     {
-        public string ClientId { get; set; }
+        public long ClientId { get; set; }
 
-        public string SecretId { get; set; }
+        public long SecretId { get; set; }
     }
 }

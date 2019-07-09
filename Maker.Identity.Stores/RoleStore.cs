@@ -12,17 +12,31 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Stores
 {
-    public class RoleStore :
-        StoreBase<MakerDbContext, Role, RoleBase, RoleHistory>,
-        IQueryableRoleStore<Role>,
-        IRoleClaimStore<Role>
+    public class RoleStore : RoleStore<MakerDbContext, Role, RoleBase, RoleHistory>
     {
-        private static readonly Func<Role, Expression<Func<RoleHistory, bool>>> RetirePredicateFactory =
+        public RoleStore(MakerDbContext context, IdentityErrorDescriber describer = null)
+            : base(context, describer)
+        {
+            // nothing
+        }
+    }
+
+    public class RoleStore<TContext, TRole, TRoleBase, TRoleHistory> :
+        StoreBase<TContext, TRole, TRoleBase, TRoleHistory>,
+        IQueryableRoleStore<TRole>,
+        IRoleClaimStore<TRole>
+
+        where TContext : DbContext
+        where TRole : class, TRoleBase
+        where TRoleBase : IRoleBase, ISupportAssign<TRoleBase>
+        where TRoleHistory : class, TRoleBase, IHistoryEntity<TRoleBase>, new()
+    {
+        private static readonly Func<TRole, Expression<Func<TRoleHistory, bool>>> RetirePredicateFactory =
             role => history => history.RoleId == role.RoleId && history.RetiredWhen == Constants.MaxDateTimeOffset;
 
         private bool _disposed;
 
-        public RoleStore(MakerDbContext context, IdentityErrorDescriber describer = null)
+        public RoleStore(TContext context, IdentityErrorDescriber describer = null)
             : base(context, RetirePredicateFactory, describer)
         {
             // nothing
@@ -34,7 +48,7 @@ namespace Maker.Identity.Stores
         /// <param name="role">The associated role.</param>
         /// <param name="claim">The associated claim.</param>
         /// <returns>The role claim entity.</returns>
-        protected virtual RoleClaim CreateRoleClaim(Role role, Claim claim)
+        protected virtual RoleClaim CreateRoleClaim(TRole role, Claim claim)
             => new RoleClaim { RoleId = role.RoleId, ClaimType = claim.Type, ClaimValue = claim.Value };
 
         #region IDisposable Members
@@ -60,7 +74,7 @@ namespace Maker.Identity.Stores
 
         #region IRoleStore Members
 
-        public virtual Task<string> GetRoleIdAsync(Role role, CancellationToken cancellationToken)
+        public virtual Task<string> GetRoleIdAsync(TRole role, CancellationToken cancellationToken)
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -68,10 +82,10 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return Task.FromResult(role.RoleId);
+            return Task.FromResult(ConvertIdToString(role.RoleId));
         }
 
-        public virtual Task<string> GetRoleNameAsync(Role role, CancellationToken cancellationToken)
+        public virtual Task<string> GetRoleNameAsync(TRole role, CancellationToken cancellationToken)
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -82,7 +96,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(role.Name);
         }
 
-        public virtual Task SetRoleNameAsync(Role role, string roleName, CancellationToken cancellationToken)
+        public virtual Task SetRoleNameAsync(TRole role, string roleName, CancellationToken cancellationToken)
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -95,7 +109,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
-        public virtual Task<string> GetNormalizedRoleNameAsync(Role role, CancellationToken cancellationToken)
+        public virtual Task<string> GetNormalizedRoleNameAsync(TRole role, CancellationToken cancellationToken)
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -106,7 +120,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(role.NormalizedName);
         }
 
-        public virtual Task SetNormalizedRoleNameAsync(Role role, string normalizedName, CancellationToken cancellationToken)
+        public virtual Task SetNormalizedRoleNameAsync(TRole role, string normalizedName, CancellationToken cancellationToken)
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -119,7 +133,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
-        public virtual async Task<Role> FindByIdAsync(string roleId, CancellationToken cancellationToken)
+        public virtual async Task<TRole> FindByIdAsync(string roleId, CancellationToken cancellationToken)
         {
             if (roleId == null)
                 throw new ArgumentNullException(nameof(roleId));
@@ -127,10 +141,14 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.Roles.FirstOrDefaultAsync(_ => _.RoleId == roleId, cancellationToken).ConfigureAwait(false);
+            var id = ConvertIdFromString(roleId);
+
+            return await Context.Set<TRole>()
+                .FirstOrDefaultAsync(_ => _.RoleId == id, cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        public virtual async Task<Role> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
+        public virtual async Task<TRole> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
         {
             if (normalizedRoleName == null)
                 throw new ArgumentNullException(nameof(normalizedRoleName));
@@ -138,20 +156,22 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.Roles.FirstOrDefaultAsync(_ => _.NormalizedName == normalizedRoleName, cancellationToken).ConfigureAwait(false);
+            return await Context.Set<TRole>()
+                .FirstOrDefaultAsync(_ => _.NormalizedName == normalizedRoleName, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         #endregion
 
         #region IQueryableRoleStore Members
 
-        public virtual IQueryable<Role> Roles => Context.Roles;
+        public virtual IQueryable<TRole> Roles => Context.Set<TRole>();
 
         #endregion
 
         #region IRoleClaimStore Members
 
-        public virtual async Task<IList<Claim>> GetClaimsAsync(Role role, CancellationToken cancellationToken = new CancellationToken())
+        public virtual async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken = new CancellationToken())
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -159,14 +179,14 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.RoleClaims
+            return await Context.Set<RoleClaim>()
                 .Where(_ => _.RoleId == role.RoleId)
                 .Select(_ => new Claim(_.ClaimType, _.ClaimValue))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
 
-        public virtual async Task AddClaimAsync(Role role, Claim claim, CancellationToken cancellationToken = new CancellationToken())
+        public virtual async Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = new CancellationToken())
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -178,12 +198,12 @@ namespace Maker.Identity.Stores
 
             var newRoleClaim = CreateRoleClaim(role, claim);
 
-            var store = new RoleClaimStore<MakerDbContext>(Context, ErrorDescriber);
+            var store = new RoleClaimStore<TContext>(Context, ErrorDescriber);
 
             await store.CreateAsync(newRoleClaim, cancellationToken).ConfigureAwait(false);
         }
 
-        public virtual async Task RemoveClaimAsync(Role role, Claim claim, CancellationToken cancellationToken = new CancellationToken())
+        public virtual async Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = new CancellationToken())
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -193,9 +213,9 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var store = new RoleClaimStore<MakerDbContext>(Context, ErrorDescriber);
+            var store = new RoleClaimStore<TContext>(Context, ErrorDescriber);
 
-            var claims = await Context.RoleClaims
+            var claims = await Context.Set<RoleClaim>()
                 .Where(_ =>
                     _.RoleId == role.RoleId &&
                     _.ClaimValue == claim.Value &&

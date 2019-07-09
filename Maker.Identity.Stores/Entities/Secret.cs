@@ -7,7 +7,7 @@ namespace Maker.Identity.Stores.Entities
         /// <summary>
         /// Gets or sets the primary key for this instance.
         /// </summary>
-        public string SecretId { get; set; } = Guid.NewGuid().ToString();
+        public long SecretId { get; set; }
 
         public string CipherType { get; set; }
 
@@ -30,7 +30,7 @@ namespace Maker.Identity.Stores.Entities
     public class SecretHistory : SecretBase, IHistoryEntity<SecretBase>
     {
         /// <inheritdoc/>
-        public string TransactionId { get; set; } = Guid.NewGuid().ToString();
+        public long TransactionId { get; set; }
 
         /// <inheritdoc/>
         public DateTimeOffset CreatedWhen { get; set; }
