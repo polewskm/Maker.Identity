@@ -26,9 +26,10 @@ namespace Maker.Identity.Stores
         IQueryableRoleStore<TRole>,
         IRoleClaimStore<TRole>
 
-        where TContext : DbContext
-        where TRole : class, TRoleBase
-        where TRoleBase : IRoleBase, ISupportAssign<TRoleBase>
+        where TContext : DbContext, IRoleDbContext<TRole, TRoleBase, TRoleHistory>
+
+        where TRole : class, TRoleBase, ISupportConcurrencyToken
+        where TRoleBase : class, IRoleBase, ISupportAssign<TRoleBase>
         where TRoleHistory : class, TRoleBase, IHistoryEntity<TRoleBase>, new()
     {
         private static readonly Func<TRole, Expression<Func<TRoleHistory, bool>>> RetirePredicateFactory =
@@ -143,7 +144,7 @@ namespace Maker.Identity.Stores
 
             var id = ConvertIdFromString(roleId);
 
-            return await Context.Set<TRole>()
+            return await Context.Roles
                 .FirstOrDefaultAsync(_ => _.RoleId == id, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -156,7 +157,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.Set<TRole>()
+            return await Context.Roles
                 .FirstOrDefaultAsync(_ => _.NormalizedName == normalizedRoleName, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -165,7 +166,7 @@ namespace Maker.Identity.Stores
 
         #region IQueryableRoleStore Members
 
-        public virtual IQueryable<TRole> Roles => Context.Set<TRole>();
+        public virtual IQueryable<TRole> Roles => Context.Roles;
 
         #endregion
 
@@ -179,7 +180,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.Set<RoleClaim>()
+            return await Context.RoleClaims
                 .Where(_ => _.RoleId == role.RoleId)
                 .Select(_ => new Claim(_.ClaimType, _.ClaimValue))
                 .ToListAsync(cancellationToken)
@@ -215,7 +216,7 @@ namespace Maker.Identity.Stores
 
             var store = new RoleClaimStore<TContext>(Context, ErrorDescriber);
 
-            var claims = await Context.Set<RoleClaim>()
+            var claims = await Context.RoleClaims
                 .Where(_ =>
                     _.RoleId == role.RoleId &&
                     _.ClaimValue == claim.Value &&

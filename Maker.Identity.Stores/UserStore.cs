@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Stores
 {
-    public class UserStore : UserStore<MakerDbContext, User, UserBase, UserHistory>
+    public class UserStore : UserStore<MakerDbContext, User, UserBase, UserHistory, Role, RoleBase, RoleHistory>
     {
         public UserStore(MakerDbContext context, IdentityErrorDescriber describer = null)
             : base(context, describer)
@@ -22,7 +22,7 @@ namespace Maker.Identity.Stores
         }
     }
 
-    public class UserStore<TContext, TUser, TUserBase, TUserHistory> :
+    public class UserStore<TContext, TUser, TUserBase, TUserHistory, TRole, TRoleBase, TRoleHistory> :
         StoreBase<TContext, TUser, TUserBase, TUserHistory>,
         IProtectedUserStore<TUser>,
         IUserRoleStore<TUser>,
@@ -39,10 +39,15 @@ namespace Maker.Identity.Stores
         IUserAuthenticatorKeyStore<TUser>,
         IUserTwoFactorRecoveryCodeStore<TUser>
 
-        where TContext : DbContext, IUserDbContext<TUser, TUserBase, TUserHistory>
+        where TContext : DbContext, IUserRoleDbContext<TUser, TUserBase, TUserHistory, TRole, TRoleBase, TRoleHistory>
+
         where TUser : class, TUserBase, ISupportConcurrencyToken
         where TUserBase : class, IUserBase, ISupportAssign<TUserBase>
         where TUserHistory : class, TUserBase, IHistoryEntity<TUserBase>, new()
+
+        where TRole : class, TRoleBase, ISupportConcurrencyToken
+        where TRoleBase : class, IRoleBase, ISupportAssign<TRoleBase>
+        where TRoleHistory : class, TRoleBase, IHistoryEntity<TRoleBase>, new()
     {
         private const string InternalLoginProvider = "[MakerIdentityUserStore]";
         private const string AuthenticatorKeyTokenName = "AuthenticatorKey";
@@ -121,7 +126,7 @@ namespace Maker.Identity.Stores
         /// <param name="user">The associated user.</param>
         /// <param name="role">The associated role.</param>
         /// <returns></returns>
-        protected virtual UserRole CreateUserRole(TUser user, Role role)
+        protected virtual UserRole CreateUserRole(TUser user, TRole role)
         {
             return new UserRole
             {
@@ -140,7 +145,7 @@ namespace Maker.Identity.Stores
         /// <param name="normalizedRoleName">The normalized role name.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The role if it exists.</returns>
-        protected virtual Task<Role> FindRoleAsync(string normalizedRoleName, CancellationToken cancellationToken)
+        protected virtual Task<TRole> FindRoleAsync(string normalizedRoleName, CancellationToken cancellationToken)
         {
             return Context.Roles.SingleOrDefaultAsync(
                 role => role.NormalizedName == normalizedRoleName,

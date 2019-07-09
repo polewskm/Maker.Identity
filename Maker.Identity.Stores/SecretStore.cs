@@ -60,7 +60,7 @@ namespace Maker.Identity.Stores
     }
 
     public class SecretStore<TContext> : StoreBase<TContext, Secret, SecretBase, SecretHistory>, ISecretStore
-        where TContext : DbContext
+        where TContext : DbContext, ISecretDbContext
     {
         private static readonly Func<Secret, Expression<Func<SecretHistory, bool>>> RetirePredicateFactory =
             client => history => history.SecretId == client.SecretId && history.RetiredWhen == Constants.MaxDateTimeOffset;
@@ -75,14 +75,14 @@ namespace Maker.Identity.Stores
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            return await Context.Set<Secret>()
+            return await Context.Secrets
                 .FirstOrDefaultAsync(_ => _.SecretId == secretId, cancellationToken)
                 .ConfigureAwait(false);
         }
 
         public virtual async Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(long secretId, CancellationToken cancellationToken)
         {
-            return await Context.Set<SecretTag>()
+            return await Context.SecretTags
                 .Where(_ => _.SecretId == secretId)
                 .Select(tag => new KeyValuePair<string, string>(tag.Key, tag.Value))
                 .ToListAsync(cancellationToken)
@@ -97,7 +97,7 @@ namespace Maker.Identity.Stores
                 && history.NormalizedKey == tag.NormalizedKey
                 && history.RetiredWhen == Constants.MaxDateTimeOffset;
 
-            var existingTags = await Context.Set<SecretTag>()
+            var existingTags = await Context.SecretTags
                 .Where(_ => _.SecretId == secretId)
                 .ToDictionaryAsync(_ => _.NormalizedKey, _ => _, StringComparer.Ordinal, cancellationToken)
                 .ConfigureAwait(false);

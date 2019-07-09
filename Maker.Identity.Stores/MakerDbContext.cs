@@ -5,6 +5,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Stores
 {
+    public interface IRoleDbContext<TRole, TRoleBase, TRoleHistory>
+        where TRole : class, TRoleBase, ISupportConcurrencyToken
+        where TRoleBase : class, IRoleBase, ISupportAssign<TRoleBase>
+        where TRoleHistory : class, TRoleBase, IHistoryEntity<TRoleBase>
+    {
+        DbSet<TRole> Roles { get; set; }
+
+        DbSet<TRoleHistory> RoleHistory { get; set; }
+
+        DbSet<RoleClaim> RoleClaims { get; set; }
+
+        DbSet<RoleClaimHistory> RoleClaimHistory { get; set; }
+    }
+
     public interface IUserDbContext<TUser, TUserBase, TUserHistory>
         where TUser : class, TUserBase, ISupportConcurrencyToken
         where TUserBase : class, IUserBase, ISupportAssign<TUserBase>
@@ -25,19 +39,53 @@ namespace Maker.Identity.Stores
         DbSet<UserToken> UserTokens { get; set; }
 
         DbSet<UserTokenHistory> UserTokenHistory { get; set; }
+    }
 
-        //
+    public interface IUserRoleDbContext<TUser, TUserBase, TUserHistory, TRole, TRoleBase, TRoleHistory> :
+        IUserDbContext<TUser, TUserBase, TUserHistory>,
+        IRoleDbContext<TRole, TRoleBase, TRoleHistory>
 
-        DbSet<Role> Roles { get; set; }
+        where TUser : class, TUserBase, ISupportConcurrencyToken
+        where TUserBase : class, IUserBase, ISupportAssign<TUserBase>
+        where TUserHistory : class, TUserBase, IHistoryEntity<TUserBase>
 
-        DbSet<RoleHistory> RoleHistory { get; set; }
-
+        where TRole : class, TRoleBase, ISupportConcurrencyToken
+        where TRoleBase : class, IRoleBase, ISupportAssign<TRoleBase>
+        where TRoleHistory : class, TRoleBase, IHistoryEntity<TRoleBase>
+    {
         DbSet<UserRole> UserRoles { get; set; }
 
         DbSet<UserRoleHistory> UserRoleHistory { get; set; }
     }
 
-    public class MakerDbContext : MakerDbContext<User, UserBase, UserHistory>
+    public interface ISecretDbContext
+    {
+        DbSet<Secret> Secrets { get; set; }
+
+        DbSet<SecretHistory> SecretHistory { get; set; }
+
+        DbSet<SecretTag> SecretTags { get; set; }
+
+        DbSet<SecretTagHistory> SecretTagHistory { get; set; }
+    }
+
+    public interface IClientDbContext
+    {
+        DbSet<Client> Clients { get; set; }
+
+        DbSet<ClientHistory> ClientHistory { get; set; }
+
+        DbSet<ClientTag> ClientTags { get; set; }
+
+        DbSet<ClientTagHistory> ClientTagHistory { get; set; }
+    }
+
+    public interface IClientSecretDbContext : IClientDbContext, ISecretDbContext
+    {
+        DbSet<ClientSecret> ClientSecrets { get; set; }
+    }
+
+    public class MakerDbContext : MakerDbContext<User, UserBase, UserHistory, Role, RoleBase, RoleHistory>
     {
         public MakerDbContext(DbContextOptions options, IIdGenerator<long> idGenerator)
             : base(options, idGenerator)
@@ -49,10 +97,17 @@ namespace Maker.Identity.Stores
     /// <summary>
     /// Class for the Entity Framework database context used for identity.
     /// </summary>
-    public class MakerDbContext<TUser, TUserBase, TUserHistory> : DbContext, IUserDbContext<TUser, TUserBase, TUserHistory>
+    public class MakerDbContext<TUser, TUserBase, TUserHistory, TRole, TRoleBase, TRoleHistory> : DbContext,
+        IUserRoleDbContext<TUser, TUserBase, TUserHistory, TRole, TRoleBase, TRoleHistory>,
+        IClientSecretDbContext
+
         where TUser : class, TUserBase, ISupportConcurrencyToken
         where TUserBase : class, IUserBase, ISupportAssign<TUserBase>
         where TUserHistory : class, TUserBase, IHistoryEntity<TUserBase>
+
+        where TRole : class, TRoleBase, ISupportConcurrencyToken
+        where TRoleBase : class, IRoleBase, ISupportAssign<TRoleBase>
+        where TRoleHistory : class, TRoleBase, IHistoryEntity<TRoleBase>
     {
         private readonly IdValueGenerator _idValueGenerator;
 
@@ -103,9 +158,9 @@ namespace Maker.Identity.Stores
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}"/> of roles.
         /// </summary>
-        public DbSet<Role> Roles { get; set; }
+        public DbSet<TRole> Roles { get; set; }
 
-        public DbSet<RoleHistory> RoleHistory { get; set; }
+        public DbSet<TRoleHistory> RoleHistory { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}"/> of user roles.
@@ -232,7 +287,7 @@ namespace Maker.Identity.Stores
                 entity.Property(_ => _.Value).IsRequired().IsUnicode(false);
             });
 
-            builder.EntityWithHistory<Role, RoleBase, RoleHistory>("RoleHistory", schemaName, entity =>
+            builder.EntityWithHistory<TRole, TRoleBase, TRoleHistory>("RoleHistory", schemaName, entity =>
             {
                 entity.ToTable("Roles", schemaName);
 
