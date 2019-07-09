@@ -212,150 +212,150 @@ namespace Maker.Identity.Stores
         public DbSet<ClientSecret> ClientSecrets { get; set; }
 
         /// <inheritdoc/>
-        protected override void OnModelCreating(ModelBuilder builder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             const string schemaName = "Identity";
 
-            builder.EntityWithHistory<TUser, TUserBase, TUserHistory>("UserHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<TUser, TUserBase, TUserHistory>("UserHistory", entityBuilder =>
             {
-                entity.ToTable("Users", schemaName);
+                entityBuilder.ToTable("Users", schemaName);
 
-                entity.HasKey(_ => _.UserId);
-                entity.HasIndex(_ => _.NormalizedUserName).HasName("U_NormalizedUserName").IsUnique();
-                entity.HasIndex(_ => _.NormalizedEmail).HasName("U_NormalizedEmail");
+                entityBuilder.HasKey(_ => _.UserId);
+                entityBuilder.HasIndex(_ => _.NormalizedUserName).HasName("U_NormalizedUserName").IsUnique();
+                entityBuilder.HasIndex(_ => _.NormalizedEmail).HasName("U_NormalizedEmail");
 
-                entity.Property(_ => _.UserId).UseIdGen();
-                entity.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
+                entityBuilder.Property(_ => _.UserId).UseIdGen();
+                entityBuilder.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
-                entity.Property(_ => _.FirstName).HasMaxLength(256).IsRequired().IsUnicode();
-                entity.Property(_ => _.LastName).HasMaxLength(256).IsRequired().IsUnicode();
+                entityBuilder.Property(_ => _.FirstName).HasMaxLength(256).IsRequired().IsUnicode();
+                entityBuilder.Property(_ => _.LastName).HasMaxLength(256).IsRequired().IsUnicode();
 
-                entity.Property(_ => _.UserName).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.NormalizedUserName).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.UserName).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.NormalizedUserName).HasMaxLength(256).IsRequired().IsUnicode(false);
 
-                entity.Property(_ => _.Email).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.NormalizedEmail).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.EmailConfirmed).IsRequired();
+                entityBuilder.Property(_ => _.Email).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.NormalizedEmail).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.EmailConfirmed).IsRequired();
 
-                entity.Property(_ => _.PasswordHash).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.SecurityStamp).HasMaxLength(50).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.PasswordHash).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.SecurityStamp).HasMaxLength(50).IsRequired().IsUnicode(false);
 
-                entity.Property(_ => _.PhoneNumber).HasMaxLength(20).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.PhoneNumberConfirmed).IsRequired();
+                entityBuilder.Property(_ => _.PhoneNumber).HasMaxLength(20).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.PhoneNumberConfirmed).IsRequired();
 
-                entity.Property(_ => _.TwoFactorEnabled).IsRequired();
-                entity.Property(_ => _.LockoutEndUtc);
-                entity.Property(_ => _.LockoutEnabled).IsRequired();
-                entity.Property(_ => _.AccessFailedCount).IsRequired();
+                entityBuilder.Property(_ => _.TwoFactorEnabled).IsRequired();
+                entityBuilder.Property(_ => _.LockoutEndUtc);
+                entityBuilder.Property(_ => _.LockoutEnabled).IsRequired();
+                entityBuilder.Property(_ => _.AccessFailedCount).IsRequired();
 
-                entity.HasMany<UserClaim>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();
-                entity.HasMany<UserLogin>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();
-                entity.HasMany<UserToken>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();
-                entity.HasMany<UserRole>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();
+                entityBuilder.HasMany<UserClaim>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();
+                entityBuilder.HasMany<UserLogin>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();
+                entityBuilder.HasMany<UserToken>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();
+                entityBuilder.HasMany<UserRole>().WithOne().HasForeignKey(_ => _.UserId).IsRequired();
             });
 
-            builder.EntityWithHistory<UserClaim, UserClaimBase, UserClaimHistory>("UserClaimHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<UserClaim, UserClaimBase, UserClaimHistory>("UserClaimHistory", entityBuilder =>
             {
-                entity.ToTable("UserClaims", schemaName);
-                entity.HasKey(_ => _.UserClaimId);
+                entityBuilder.ToTable("UserClaims", schemaName);
+                entityBuilder.HasKey(_ => _.UserClaimId);
 
-                entity.Property(_ => _.UserClaimId).UseIdGen();
-                entity.Property(_ => _.ClaimType).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.ClaimValue).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.UserClaimId).UseIdGen();
+                entityBuilder.Property(_ => _.ClaimType).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.ClaimValue).IsRequired().IsUnicode(false);
             });
 
-            builder.EntityWithHistory<UserLogin, UserLoginBase, UserLoginHistory>("UserLoginHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<UserLogin, UserLoginBase, UserLoginHistory>("UserLoginHistory", entityBuilder =>
             {
-                entity.ToTable("UserLogins", schemaName);
-                entity.HasKey(_ => new { _.LoginProvider, _.ProviderKey });
+                entityBuilder.ToTable("UserLogins", schemaName);
+                entityBuilder.HasKey(_ => new { _.LoginProvider, _.ProviderKey });
 
-                entity.Property(_ => _.LoginProvider).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.ProviderKey).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.ProviderDisplayName).HasMaxLength(256).IsRequired().IsUnicode();
+                entityBuilder.Property(_ => _.LoginProvider).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.ProviderKey).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.ProviderDisplayName).HasMaxLength(256).IsRequired().IsUnicode();
             });
 
-            builder.EntityWithHistory<UserToken, UserTokenBase, UserTokenHistory>("UserTokenHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<UserToken, UserTokenBase, UserTokenHistory>("UserTokenHistory", entityBuilder =>
             {
-                entity.ToTable("UserTokens", schemaName);
-                entity.HasKey(_ => new { _.UserId, _.LoginProvider, _.Name });
+                entityBuilder.ToTable("UserTokens", schemaName);
+                entityBuilder.HasKey(_ => new { _.UserId, _.LoginProvider, _.Name });
 
-                entity.Property(_ => _.LoginProvider).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.Name).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.Value).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.LoginProvider).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.Name).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.Value).IsRequired().IsUnicode(false);
             });
 
-            builder.EntityWithHistory<TRole, TRoleBase, TRoleHistory>("RoleHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<TRole, TRoleBase, TRoleHistory>("RoleHistory", entityBuilder =>
             {
-                entity.ToTable("Roles", schemaName);
+                entityBuilder.ToTable("Roles", schemaName);
 
-                entity.HasKey(_ => _.RoleId);
-                entity.HasIndex(_ => _.NormalizedName).HasName("U_NormalizedName").IsUnique();
+                entityBuilder.HasKey(_ => _.RoleId);
+                entityBuilder.HasIndex(_ => _.NormalizedName).HasName("U_NormalizedName").IsUnique();
 
-                entity.Property(_ => _.RoleId).UseIdGen();
-                entity.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
+                entityBuilder.Property(_ => _.RoleId).UseIdGen();
+                entityBuilder.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
-                entity.Property(_ => _.Name).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.NormalizedName).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.Name).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.NormalizedName).HasMaxLength(256).IsRequired().IsUnicode(false);
 
-                entity.HasMany<UserRole>().WithOne().HasForeignKey(_ => _.RoleId).IsRequired();
-                entity.HasMany<RoleClaim>().WithOne().HasForeignKey(_ => _.RoleId).IsRequired();
+                entityBuilder.HasMany<UserRole>().WithOne().HasForeignKey(_ => _.RoleId).IsRequired();
+                entityBuilder.HasMany<RoleClaim>().WithOne().HasForeignKey(_ => _.RoleId).IsRequired();
             });
 
-            builder.EntityWithHistory<RoleClaim, RoleClaimBase, RoleClaimHistory>("RoleClaimHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<RoleClaim, RoleClaimBase, RoleClaimHistory>("RoleClaimHistory", entityBuilder =>
             {
-                entity.ToTable("RoleClaims", schemaName);
-                entity.HasKey(_ => _.RoleClaimId);
+                entityBuilder.ToTable("RoleClaims", schemaName);
+                entityBuilder.HasKey(_ => _.RoleClaimId);
 
-                entity.Property(_ => _.RoleClaimId).UseIdGen();
-                entity.Property(_ => _.ClaimType).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.ClaimValue).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.RoleClaimId).UseIdGen();
+                entityBuilder.Property(_ => _.ClaimType).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.ClaimValue).IsRequired().IsUnicode(false);
             });
 
-            builder.EntityWithHistory<UserRole, UserRoleBase, UserRoleHistory>("UserRoleHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<UserRole, UserRoleBase, UserRoleHistory>("UserRoleHistory", entityBuilder =>
             {
-                entity.ToTable("UserRoles", schemaName);
-                entity.HasKey(_ => new { _.UserId, _.RoleId });
+                entityBuilder.ToTable("UserRoles", schemaName);
+                entityBuilder.HasKey(_ => new { _.UserId, _.RoleId });
             });
 
-            builder.EntityWithHistory<Secret, SecretBase, SecretHistory>("SecretHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<Secret, SecretBase, SecretHistory>("SecretHistory", entityBuilder =>
             {
-                entity.ToTable("Secrets", schemaName);
-                entity.HasKey(_ => _.SecretId);
+                entityBuilder.ToTable("Secrets", schemaName);
+                entityBuilder.HasKey(_ => _.SecretId);
 
-                entity.Property(_ => _.SecretId).UseIdGen();
-                entity.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
+                entityBuilder.Property(_ => _.SecretId).UseIdGen();
+                entityBuilder.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
-                entity.Property(_ => _.CipherType).HasMaxLength(256).IsRequired().IsUnicode(false);
-                entity.Property(_ => _.CipherText).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.CipherType).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.CipherText).IsRequired().IsUnicode(false);
             });
 
-            builder.EntityWithHistory<SecretTag, SecretTagBase, SecretTagHistory>("SecretTagHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<SecretTag, SecretTagBase, SecretTagHistory>("SecretTagHistory", entityBuilder =>
             {
-                entity.AsTag("SecretTags", schemaName);
-                entity.HasKey(_ => new { _.SecretId, _.NormalizedKey });
-                entity.HasOne<Secret>().WithMany().HasForeignKey(_ => _.SecretId).IsRequired();
+                entityBuilder.AsTag("SecretTags", schemaName);
+                entityBuilder.HasKey(_ => new { _.SecretId, _.NormalizedKey });
+                entityBuilder.HasOne<Secret>().WithMany().HasForeignKey(_ => _.SecretId).IsRequired();
             });
 
-            builder.EntityWithHistory<Client, ClientBase, ClientHistory>("ClientHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<Client, ClientBase, ClientHistory>("ClientHistory", entityBuilder =>
             {
-                entity.ToTable("Clients", schemaName);
-                entity.HasKey(_ => _.ClientId);
+                entityBuilder.ToTable("Clients", schemaName);
+                entityBuilder.HasKey(_ => _.ClientId);
 
-                entity.Property(_ => _.ClientId).UseIdGen();
-                entity.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
+                entityBuilder.Property(_ => _.ClientId).UseIdGen();
+                entityBuilder.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
-                entity.Property(_ => _.Disabled).IsRequired();
-                entity.Property(_ => _.RequireSecret).IsRequired();
+                entityBuilder.Property(_ => _.Disabled).IsRequired();
+                entityBuilder.Property(_ => _.RequireSecret).IsRequired();
             });
 
-            builder.EntityWithHistory<ClientTag, ClientTagBase, ClientTagHistory>("ClientTagHistory", schemaName, entity =>
+            modelBuilder.EntityWithHistory<ClientTag, ClientTagBase, ClientTagHistory>("ClientTagHistory", entityBuilder =>
             {
-                entity.AsTag("ClientTags", schemaName);
-                entity.HasKey(_ => new { _.ClientId, _.NormalizedKey });
-                entity.HasOne<Client>().WithMany().HasForeignKey(_ => _.ClientId).IsRequired();
+                entityBuilder.AsTag("ClientTags", schemaName);
+                entityBuilder.HasKey(_ => new { _.ClientId, _.NormalizedKey });
+                entityBuilder.HasOne<Client>().WithMany().HasForeignKey(_ => _.ClientId).IsRequired();
             });
 
-            builder.Entity<ClientSecret>(entity =>
+            modelBuilder.Entity<ClientSecret>(entity =>
             {
                 entity.ToTable("ClientSecrets", schemaName);
                 entity.HasKey(_ => new { _.ClientId, _.SecretId });
@@ -364,7 +364,7 @@ namespace Maker.Identity.Stores
                 entity.HasOne<Secret>().WithMany().HasForeignKey(_ => _.SecretId).IsRequired();
             });
 
-            builder.UseIdGen(_idValueGenerator);
+            modelBuilder.UseIdGen(_idValueGenerator);
         }
 
     }

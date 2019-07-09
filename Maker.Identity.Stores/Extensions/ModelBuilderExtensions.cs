@@ -41,21 +41,21 @@ namespace Maker.Identity.Stores.Extensions
             }
         }
 
-        public static EntityTypeBuilder<TEntity> AsTag<TEntity>(this EntityTypeBuilder<TEntity> builder, string name, string schema)
+        public static EntityTypeBuilder<TEntity> AsTag<TEntity>(this EntityTypeBuilder<TEntity> entityBuilder, string name, string schema)
             where TEntity : Tag, ISupportConcurrencyToken
         {
-            builder.ToTable(name, schema);
+            entityBuilder.ToTable(name, schema);
 
-            builder.Property(_ => _.NormalizedKey).HasMaxLength(256).IsRequired().IsUnicode(false);
-            builder.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
+            entityBuilder.Property(_ => _.NormalizedKey).HasMaxLength(256).IsRequired().IsUnicode(false);
+            entityBuilder.Property(_ => _.ConcurrencyStamp).IsConcurrencyStamp();
 
-            builder.Property(_ => _.Key).HasMaxLength(256).IsRequired().IsUnicode(false);
-            builder.Property(_ => _.Value).HasMaxLength(256).IsRequired().IsUnicode(false);
+            entityBuilder.Property(_ => _.Key).HasMaxLength(256).IsRequired().IsUnicode(false);
+            entityBuilder.Property(_ => _.Value).HasMaxLength(256).IsRequired().IsUnicode(false);
 
-            return builder;
+            return entityBuilder;
         }
 
-        public static void EntityWithHistory<TEntity, TBase, THistory>(this ModelBuilder modelBuilder, string historyTableName, string historySchemaName, Action<EntityTypeBuilder<TEntity>> entityBuildAction, Action<EntityTypeBuilder<THistory>> historyBuildAction = null)
+        public static void EntityWithHistory<TEntity, TBase, THistory>(this ModelBuilder modelBuilder, string historyTableName, Action<EntityTypeBuilder<TEntity>> entityBuildAction, Action<EntityTypeBuilder<THistory>> historyBuildAction = null)
             where TEntity : class, TBase
             where TBase : ISupportAssign<TBase>
             where THistory : class, TBase, IHistoryEntity<TBase>
@@ -65,6 +65,7 @@ namespace Maker.Identity.Stores.Extensions
                 entityBuildAction(entityBuilder);
 
                 var entityMetadata = entityBuilder.Metadata;
+                var entitySchema = entityMetadata.Relational().Schema;
                 var entityProperties = entityMetadata.GetProperties();
 
                 modelBuilder.Entity<THistory>(historyBuilder =>
@@ -72,7 +73,7 @@ namespace Maker.Identity.Stores.Extensions
                     var historyMetadata = historyBuilder.Metadata;
                     var historyKeyProperties = new List<IMutableProperty>();
 
-                    historyBuilder.ToTable(historyTableName, historySchemaName);
+                    historyBuilder.ToTable(historyTableName, entitySchema);
 
                     var propTransactionId = historyBuilder.Property(_ => _.TransactionId).UseIdGen();
 
