@@ -174,9 +174,13 @@ namespace Maker.Identity.Stores.Helpers
         {
             foreach (var entity in entities)
             {
+                await PreDeleteAsync(entity, cancellationToken).ConfigureAwait(false);
+
                 Context.Set<TEntity>().Remove(entity);
 
                 await RetireHistoryAsync(entity, cancellationToken).ConfigureAwait(false);
+
+                await PostDeleteAsync(entity, cancellationToken).ConfigureAwait(false);
             }
 
             try
@@ -188,6 +192,16 @@ namespace Maker.Identity.Stores.Helpers
                 return IdentityResult.Failed(ErrorDescriber.ConcurrencyFailure());
             }
             return IdentityResult.Success;
+        }
+
+        protected virtual Task PreDeleteAsync(TEntity entity, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        protected virtual Task PostDeleteAsync(TEntity entity, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
         }
 
     }

@@ -71,6 +71,7 @@ namespace Maker.Identity.Stores
     public class ClientStore<TContext> : StoreBase<TContext, Client, ClientBase, ClientHistory>, IClientSecretStore
         where TContext : DbContext, IClientSecretDbContext
     {
+        // ReSharper disable once StaticMemberInGenericType
         private static readonly Func<Client, Expression<Func<ClientHistory, bool>>> RetirePredicateFactory =
             client => history => history.ClientId == client.ClientId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
@@ -78,6 +79,17 @@ namespace Maker.Identity.Stores
             : base(context, RetirePredicateFactory, describer)
         {
             // nothing
+        }
+
+        private TagStore<TContext, ClientTag, ClientTagBase, ClientTagHistory> CreateTagStore(long clientId)
+        {
+            ClientTag TagFactory() => new ClientTag { ClientId = clientId };
+            Expression<Func<ClientTagHistory, bool>> RetirePredicateFactory(ClientTag tag) => history =>
+                history.ClientId == tag.ClientId
+                && history.NormalizedKey == tag.NormalizedKey
+                && history.RetiredWhenUtc == Constants.MaxDateTime;
+
+            return new TagStore<TContext, ClientTag, ClientTagBase, ClientTagHistory>(Context, RetirePredicateFactory, TagFactory);
         }
 
         #region IClientStore Members
@@ -91,8 +103,25 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
+        protected override async Task PreDeleteAsync(Client entity, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var clientId = entity.ClientId;
+            var store = CreateTagStore(clientId);
+
+            var existingTags = await Context.ClientTags
+                .Where(_ => _.ClientId == clientId)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            await store.DeleteAsync(existingTags, cancellationToken).ConfigureAwait(false);
+        }
+
         public virtual async Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(long clientId, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             return await Context.ClientTags
                 .Where(_ => _.ClientId == clientId)
                 .Select(tag => new KeyValuePair<string, string>(tag.Key, tag.Value))
@@ -102,18 +131,14 @@ namespace Maker.Identity.Stores
 
         public virtual async Task UpdateTagsAsync(long clientId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken)
         {
-            ClientTag TagFactory() => new ClientTag { ClientId = clientId };
-            Expression<Func<ClientTagHistory, bool>> RetirePredicateFactory(ClientTag tag) => history =>
-                history.ClientId == tag.ClientId
-                && history.NormalizedKey == tag.NormalizedKey
-                && history.RetiredWhenUtc == Constants.MaxDateTime;
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var store = CreateTagStore(clientId);
 
             var existingTags = await Context.ClientTags
                 .Where(_ => _.ClientId == clientId)
                 .ToDictionaryAsync(_ => _.NormalizedKey, _ => _, StringComparer.Ordinal, cancellationToken)
                 .ConfigureAwait(false);
-
-            var store = new TagStore<TContext, ClientTag, ClientTagBase, ClientTagHistory>(Context, RetirePredicateFactory, TagFactory);
 
             await store.UpdateTagsAsync(tags, existingTags, cancellationToken).ConfigureAwait(false);
         }
@@ -124,6 +149,8 @@ namespace Maker.Identity.Stores
 
         public virtual async Task<IEnumerable<Secret>> GetSecretsAsync(long clientId, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var query = from clientSecret in Context.ClientSecrets
                         join secret in Context.Secrets on clientSecret.SecretId equals secret.SecretId
                         where clientSecret.ClientId == clientId
@@ -134,6 +161,8 @@ namespace Maker.Identity.Stores
 
         public virtual async Task AddSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var newClientSecret = new ClientSecret
             {
                 ClientId = clientId,
@@ -147,6 +176,8 @@ namespace Maker.Identity.Stores
 
         public virtual async Task RemoveSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var clientSecret = await Context.ClientSecrets
                 .SingleOrDefaultAsync(_ => _.ClientId == clientId && _.SecretId == secretId, cancellationToken)
                 .ConfigureAwait(false);
