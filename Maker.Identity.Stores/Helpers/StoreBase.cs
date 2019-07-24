@@ -195,26 +195,29 @@ namespace Maker.Identity.Stores.Helpers
         where TEntity : class, TBase
         where THistory : class, TBase, IHistoryEntity<TBase>, new()
     {
-        private readonly DateTime _now = DateTime.UtcNow;
         private readonly Func<TEntity, Expression<Func<THistory, bool>>> _retirePredicateFactory;
+
+        protected ISystemClock SystemClock { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StoreBase{TContext,TEntity,TBase,THistory}"/> class.
         /// </summary>
         /// <param name="context">The context used to access the store.</param>
-        /// <param name="retirePredicateFactory"></param>
         /// <param name="describer">The <see cref="IdentityErrorDescriber"/> used to describe store errors.</param>
-        protected StoreBase(TContext context, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory, IdentityErrorDescriber describer = null)
+        /// <param name="systemClock"><see cref="ISystemClock"/></param>
+        /// <param name="retirePredicateFactory"></param>
+        protected StoreBase(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory)
             : base(context, describer)
         {
             _retirePredicateFactory = retirePredicateFactory ?? throw new ArgumentNullException(nameof(retirePredicateFactory));
+            SystemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
         }
 
         private Task CreateHistoryAsync(TEntity entity, CancellationToken cancellationToken)
         {
             var newHistory = new THistory
             {
-                CreatedWhenUtc = _now,
+                CreatedWhenUtc = SystemClock.UtcNow.UtcDateTime,
                 RetiredWhenUtc = Constants.MaxDateTime,
             };
             newHistory.Assign(entity);
@@ -238,7 +241,7 @@ namespace Maker.Identity.Stores.Helpers
 
             foreach (var item in itemsToRetire)
             {
-                item.RetiredWhenUtc = _now;
+                item.RetiredWhenUtc = SystemClock.UtcNow.UtcDateTime;
 
                 cancellationToken.ThrowIfCancellationRequested();
 

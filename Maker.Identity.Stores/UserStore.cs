@@ -16,8 +16,8 @@ namespace Maker.Identity.Stores
 {
     public class UserStore : UserStore<MakerDbContext, User, UserBase, UserHistory, Role, RoleBase, RoleHistory>
     {
-        public UserStore(MakerDbContext context, IdentityErrorDescriber describer = null)
-            : base(context, describer)
+        public UserStore(MakerDbContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock)
         {
             // nothing
         }
@@ -64,8 +64,9 @@ namespace Maker.Identity.Stores
         /// </summary>
         /// <param name="context">The <see cref="DbContext"/>.</param>
         /// <param name="describer">The <see cref="IdentityErrorDescriber"/> used to describe store errors.</param>
-        public UserStore(TContext context, IdentityErrorDescriber describer = null)
-            : base(context, RetirePredicateFactory, describer)
+        /// <param name="systemClock"><see cref="ISystemClock"/></param>
+        public UserStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock, RetirePredicateFactory)
         {
             // nothing
         }
@@ -314,7 +315,7 @@ namespace Maker.Identity.Stores
 
             var newUserRole = CreateUserRole(user, roleEntity);
 
-            var store = new UserRoleStore<TContext>(Context, ErrorDescriber);
+            var store = new UserRoleStore<TContext>(Context, ErrorDescriber, SystemClock);
 
             await store.CreateAsync(newUserRole, cancellationToken).ConfigureAwait(false);
         }
@@ -329,7 +330,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var store = new UserRoleStore<TContext>(Context, ErrorDescriber);
+            var store = new UserRoleStore<TContext>(Context, ErrorDescriber, SystemClock);
 
             var role = await FindRoleAsync(normalizedRoleName, cancellationToken).ConfigureAwait(false);
             if (role != null)
@@ -500,7 +501,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var store = new UserClaimStore<TContext>(Context, ErrorDescriber);
+            var store = new UserClaimStore<TContext>(Context, ErrorDescriber, SystemClock);
 
             var userClaims = claims.Select(claim => CreateUserClaim(user, claim));
 
@@ -533,7 +534,7 @@ namespace Maker.Identity.Stores
                 matchedClaim.ClaimValue = newClaim.Value;
             }
 
-            var store = new UserClaimStore<TContext>(Context, ErrorDescriber);
+            var store = new UserClaimStore<TContext>(Context, ErrorDescriber, SystemClock);
 
             await store.UpdateAsync(matchedClaims, cancellationToken).ConfigureAwait(false);
         }
@@ -548,7 +549,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var store = new UserClaimStore<TContext>(Context, ErrorDescriber);
+            var store = new UserClaimStore<TContext>(Context, ErrorDescriber, SystemClock);
 
             foreach (var claim in claims)
             {
@@ -977,27 +978,33 @@ namespace Maker.Identity.Stores
 
         #region IUserTwoFactorRecoveryCodeStore Members
 
+        private const string CodeDelimiter = ";";
+
         public virtual Task ReplaceCodesAsync(TUser user, IEnumerable<string> recoveryCodes, CancellationToken cancellationToken)
         {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
             if (recoveryCodes == null)
                 throw new ArgumentNullException(nameof(recoveryCodes));
 
-            var mergedCodes = string.Join(";", recoveryCodes);
+            var mergedCodes = string.Join(CodeDelimiter, recoveryCodes);
             return SetTokenAsync(user, InternalLoginProvider, RecoveryCodeTokenName, mergedCodes, cancellationToken);
         }
 
         public virtual async Task<bool> RedeemCodeAsync(TUser user, string code, CancellationToken cancellationToken)
         {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
             if (code == null)
                 throw new ArgumentNullException(nameof(code));
 
             var mergedCodes = await GetTokenAsync(user, InternalLoginProvider, RecoveryCodeTokenName, cancellationToken).ConfigureAwait(false) ?? string.Empty;
-            var splitCodes = mergedCodes.Split(';');
+            var splitCodes = mergedCodes.Split(new[] { CodeDelimiter }, StringSplitOptions.None);
 
             if (!splitCodes.Contains(code))
                 return false;
 
-            var updatedCodes = new List<string>(splitCodes.Where(s => s != code));
+            var updatedCodes = splitCodes.Where(s => s != code);
             await ReplaceCodesAsync(user, updatedCodes, cancellationToken).ConfigureAwait(false);
 
             return true;
@@ -1005,8 +1012,11 @@ namespace Maker.Identity.Stores
 
         public virtual async Task<int> CountCodesAsync(TUser user, CancellationToken cancellationToken)
         {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
             var mergedCodes = await GetTokenAsync(user, InternalLoginProvider, RecoveryCodeTokenName, cancellationToken).ConfigureAwait(false) ?? string.Empty;
-            return mergedCodes.Length > 0 ? mergedCodes.Split(';').Length : 0;
+            return mergedCodes.Length > 0 ? mergedCodes.Split(new[] { CodeDelimiter }, StringSplitOptions.None).Length : 0;
         }
 
         #endregion

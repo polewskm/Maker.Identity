@@ -14,8 +14,8 @@ namespace Maker.Identity.Stores
         private static readonly Func<UserRole, Expression<Func<UserRoleHistory, bool>>> RetirePredicateFactory =
             userRole => history => history.UserId == userRole.UserId && history.RoleId == userRole.RoleId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
-        public UserRoleStore(TContext context, IdentityErrorDescriber describer = null)
-            : base(context, RetirePredicateFactory, describer)
+        public UserRoleStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock, RetirePredicateFactory)
         {
             AutoSaveChanges = false;
         }

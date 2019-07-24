@@ -18,8 +18,8 @@ namespace Maker.Identity.Stores.Helpers
     {
         private readonly Func<TEntity> _factory;
 
-        public TagStore(TContext context, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory, Func<TEntity> factory, IdentityErrorDescriber describer = null)
-            : base(context, retirePredicateFactory, describer)
+        public TagStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock, Func<TEntity> factory, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory)
+            : base(context, describer, systemClock, retirePredicateFactory)
         {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
 

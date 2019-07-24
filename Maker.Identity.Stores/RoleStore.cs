@@ -14,8 +14,8 @@ namespace Maker.Identity.Stores
 {
     public class RoleStore : RoleStore<MakerDbContext, Role, RoleBase, RoleHistory>
     {
-        public RoleStore(MakerDbContext context, IdentityErrorDescriber describer = null)
-            : base(context, describer)
+        public RoleStore(MakerDbContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock)
         {
             // nothing
         }
@@ -37,8 +37,8 @@ namespace Maker.Identity.Stores
 
         private bool _disposed;
 
-        public RoleStore(TContext context, IdentityErrorDescriber describer = null)
-            : base(context, RetirePredicateFactory, describer)
+        public RoleStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock, RetirePredicateFactory)
         {
             // nothing
         }
@@ -201,7 +201,7 @@ namespace Maker.Identity.Stores
 
             var newRoleClaim = CreateRoleClaim(role, claim);
 
-            var store = new RoleClaimStore<TContext>(Context, ErrorDescriber);
+            var store = new RoleClaimStore<TContext>(Context, ErrorDescriber, SystemClock);
 
             await store.CreateAsync(newRoleClaim, cancellationToken).ConfigureAwait(false);
         }
@@ -216,7 +216,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var store = new RoleClaimStore<TContext>(Context, ErrorDescriber);
+            var store = new RoleClaimStore<TContext>(Context, ErrorDescriber, SystemClock);
 
             var claims = await Context.RoleClaims
                 .Where(_ =>

@@ -52,8 +52,8 @@ namespace Maker.Identity.Stores
 
     public class SecretStore : SecretStore<MakerDbContext>
     {
-        public SecretStore(MakerDbContext context, IdentityErrorDescriber describer = null)
-            : base(context, describer)
+        public SecretStore(MakerDbContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock)
         {
             // nothing
         }
@@ -66,8 +66,8 @@ namespace Maker.Identity.Stores
         private static readonly Func<Secret, Expression<Func<SecretHistory, bool>>> RetirePredicateFactory =
             client => history => history.SecretId == client.SecretId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
-        public SecretStore(TContext context, IdentityErrorDescriber describer = null)
-            : base(context, RetirePredicateFactory, describer)
+        public SecretStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock, RetirePredicateFactory)
         {
             // nothing
         }
@@ -80,7 +80,7 @@ namespace Maker.Identity.Stores
                 && history.NormalizedKey == tag.NormalizedKey
                 && history.RetiredWhenUtc == Constants.MaxDateTime;
 
-            return new TagStore<TContext, SecretTag, SecretTagBase, SecretTagHistory>(Context, RetirePredicateFactory, TagFactory);
+            return new TagStore<TContext, SecretTag, SecretTagBase, SecretTagHistory>(Context, ErrorDescriber, SystemClock, TagFactory, RetirePredicateFactory);
         }
 
         #region ISecretStore Members

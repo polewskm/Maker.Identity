@@ -61,8 +61,8 @@ namespace Maker.Identity.Stores
 
     public class ClientStore : ClientStore<MakerDbContext>
     {
-        public ClientStore(MakerDbContext context, IdentityErrorDescriber describer = null)
-            : base(context, describer)
+        public ClientStore(MakerDbContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock)
         {
             // nothing
         }
@@ -75,8 +75,8 @@ namespace Maker.Identity.Stores
         private static readonly Func<Client, Expression<Func<ClientHistory, bool>>> RetirePredicateFactory =
             client => history => history.ClientId == client.ClientId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
-        public ClientStore(TContext context, IdentityErrorDescriber describer = null)
-            : base(context, RetirePredicateFactory, describer)
+        public ClientStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock, RetirePredicateFactory)
         {
             // nothing
         }
@@ -89,7 +89,7 @@ namespace Maker.Identity.Stores
                 && history.NormalizedKey == tag.NormalizedKey
                 && history.RetiredWhenUtc == Constants.MaxDateTime;
 
-            return new TagStore<TContext, ClientTag, ClientTagBase, ClientTagHistory>(Context, RetirePredicateFactory, TagFactory);
+            return new TagStore<TContext, ClientTag, ClientTagBase, ClientTagHistory>(Context, ErrorDescriber, SystemClock, TagFactory, RetirePredicateFactory);
         }
 
         #region IClientStore Members
@@ -173,7 +173,7 @@ namespace Maker.Identity.Stores
                 SecretId = secretId,
             };
 
-            var store = new ClientSecretStore<TContext>(Context, ErrorDescriber);
+            var store = new ClientSecretStore<TContext>(Context, ErrorDescriber, SystemClock);
 
             await store.CreateAsync(newClientSecret, cancellationToken).ConfigureAwait(false);
         }
@@ -188,7 +188,7 @@ namespace Maker.Identity.Stores
 
             if (clientSecret != null)
             {
-                var store = new ClientSecretStore<TContext>(Context, ErrorDescriber);
+                var store = new ClientSecretStore<TContext>(Context, ErrorDescriber, SystemClock);
 
                 await store.DeleteAsync(clientSecret, cancellationToken).ConfigureAwait(false);
             }

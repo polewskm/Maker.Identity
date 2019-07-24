@@ -14,8 +14,8 @@ namespace Maker.Identity.Stores
         private static readonly Func<UserClaim, Expression<Func<UserClaimHistory, bool>>> RetirePredicateFactory =
             roleClaim => history => history.UserClaimId == roleClaim.UserClaimId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
-        public UserClaimStore(TContext context, IdentityErrorDescriber describer = null)
-            : base(context, RetirePredicateFactory, describer)
+        public UserClaimStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock, RetirePredicateFactory)
         {
             AutoSaveChanges = false;
         }
