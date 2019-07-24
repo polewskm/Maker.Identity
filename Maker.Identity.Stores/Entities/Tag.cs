@@ -10,7 +10,7 @@
     }
 
     public abstract class Tag<TEntity> : Tag, ISupportAssign<TEntity>
-        where TEntity : Tag, ISupportAssign<TEntity>
+        where TEntity : Tag<TEntity>
     {
         public virtual void Assign(TEntity other)
         {
@@ -18,5 +18,6 @@
             Key = other.Key;
             Value = other.Value;
         }
+
     }
 }
