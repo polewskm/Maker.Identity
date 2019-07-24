@@ -34,11 +34,7 @@ namespace Maker.Identity.Stores
 
         DbSet<UserLogin> UserLogins { get; set; }
 
-        DbSet<UserLoginHistory> UserLoginHistory { get; set; }
-
         DbSet<UserToken> UserTokens { get; set; }
-
-        DbSet<UserTokenHistory> UserTokenHistory { get; set; }
     }
 
     public interface IUserRoleDbContext<TUser, TUserBase, TUserHistory, TRole, TRoleBase, TRoleHistory> :
@@ -144,14 +140,10 @@ namespace Maker.Identity.Stores
         /// </summary>
         public DbSet<UserLogin> UserLogins { get; set; }
 
-        public DbSet<UserLoginHistory> UserLoginHistory { get; set; }
-
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}" /> of user tokens.
         /// </summary>
         public DbSet<UserToken> UserTokens { get; set; }
-
-        public DbSet<UserTokenHistory> UserTokenHistory { get; set; }
 
         //
 
@@ -264,7 +256,7 @@ namespace Maker.Identity.Stores
                 entityBuilder.Property(_ => _.ClaimValue).IsRequired().IsUnicode(false);
             });
 
-            modelBuilder.EntityWithHistory<UserLogin, UserLoginBase, UserLoginHistory>("UserLoginHistory", entityBuilder =>
+            modelBuilder.Entity<UserLogin>(entityBuilder =>
             {
                 entityBuilder.ToTable("UserLogins", schemaName);
                 entityBuilder.HasKey(_ => new { _.LoginProvider, _.ProviderKey });
@@ -274,7 +266,7 @@ namespace Maker.Identity.Stores
                 entityBuilder.Property(_ => _.ProviderDisplayName).HasMaxLength(256).IsRequired().IsUnicode();
             });
 
-            modelBuilder.EntityWithHistory<UserToken, UserTokenBase, UserTokenHistory>("UserTokenHistory", entityBuilder =>
+            modelBuilder.Entity<UserToken>(entityBuilder =>
             {
                 entityBuilder.ToTable("UserTokens", schemaName);
                 entityBuilder.HasKey(_ => new { _.UserId, _.LoginProvider, _.Name });

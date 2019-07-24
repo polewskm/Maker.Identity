@@ -10,6 +10,7 @@ namespace Maker.Identity.Stores
     public class UserRoleStore<TContext> : StoreBase<TContext, UserRole, UserRoleBase, UserRoleHistory>
         where TContext : DbContext
     {
+        // ReSharper disable once StaticMemberInGenericType
         private static readonly Func<UserRole, Expression<Func<UserRoleHistory, bool>>> RetirePredicateFactory =
             userRole => history => history.UserId == userRole.UserId && history.RoleId == userRole.RoleId && history.RetiredWhenUtc == Constants.MaxDateTime;
 

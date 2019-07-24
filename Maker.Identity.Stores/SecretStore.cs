@@ -94,19 +94,11 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
-        protected override async Task PreDeleteAsync(Secret entity, CancellationToken cancellationToken)
+        protected override async Task BeforeDeleteAsync(Secret entity, CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            await DeleteTagsAsync(entity.SecretId, cancellationToken).ConfigureAwait(false);
 
-            var secretId = entity.SecretId;
-            var store = CreateTagStore(secretId);
-
-            var existingTags = await Context.SecretTags
-                .Where(_ => _.SecretId == secretId)
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            await store.DeleteAsync(existingTags, cancellationToken).ConfigureAwait(false);
+            await base.BeforeDeleteAsync(entity, cancellationToken).ConfigureAwait(false);
         }
 
         public virtual async Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(long secretId, CancellationToken cancellationToken)
@@ -132,6 +124,18 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
 
             await store.UpdateTagsAsync(tags, existingTags, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task DeleteTagsAsync(long secretId, CancellationToken cancellationToken)
+        {
+            var store = CreateTagStore(secretId);
+
+            var existingTags = await Context.SecretTags
+                .Where(_ => _.SecretId == secretId)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            await store.DeleteAsync(existingTags, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion

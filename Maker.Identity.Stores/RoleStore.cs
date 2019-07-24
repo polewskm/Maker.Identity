@@ -125,6 +125,8 @@ namespace Maker.Identity.Stores
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
+            if (normalizedName == null)
+                throw new ArgumentNullException(nameof(normalizedName));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -172,7 +174,7 @@ namespace Maker.Identity.Stores
 
         #region IRoleClaimStore Members
 
-        public virtual async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken = new CancellationToken())
+        public virtual async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken)
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -187,7 +189,7 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
-        public virtual async Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = new CancellationToken())
+        public virtual async Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken)
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
@@ -204,7 +206,7 @@ namespace Maker.Identity.Stores
             await store.CreateAsync(newRoleClaim, cancellationToken).ConfigureAwait(false);
         }
 
-        public virtual async Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = new CancellationToken())
+        public virtual async Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken)
         {
             if (role == null)
                 throw new ArgumentNullException(nameof(role));

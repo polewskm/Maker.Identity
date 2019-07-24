@@ -103,19 +103,11 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
-        protected override async Task PreDeleteAsync(Client entity, CancellationToken cancellationToken)
+        protected override async Task BeforeDeleteAsync(Client entity, CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            await DeleteTagsAsync(entity.ClientId, cancellationToken).ConfigureAwait(false);
 
-            var clientId = entity.ClientId;
-            var store = CreateTagStore(clientId);
-
-            var existingTags = await Context.ClientTags
-                .Where(_ => _.ClientId == clientId)
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            await store.DeleteAsync(existingTags, cancellationToken).ConfigureAwait(false);
+            await base.BeforeDeleteAsync(entity, cancellationToken).ConfigureAwait(false);
         }
 
         public virtual async Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(long clientId, CancellationToken cancellationToken)
@@ -141,6 +133,18 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
 
             await store.UpdateTagsAsync(tags, existingTags, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task DeleteTagsAsync(long clientId, CancellationToken cancellationToken)
+        {
+            var store = CreateTagStore(clientId);
+
+            var existingTags = await Context.ClientTags
+                .Where(_ => _.ClientId == clientId)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            await store.DeleteAsync(existingTags, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion

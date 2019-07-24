@@ -1,11 +1,9 @@
-﻿using System;
-
-namespace Maker.Identity.Stores.Entities
+﻿namespace Maker.Identity.Stores.Entities
 {
     /// <summary>
     /// Represents a login and its associated provider for a user.
     /// </summary>
-    public class UserLoginBase : ISupportAssign<UserLoginBase>
+    public class UserLogin
     {
         /// <summary>
         /// Gets or sets the primary key of the user associated with this login.
@@ -26,30 +24,5 @@ namespace Maker.Identity.Stores.Entities
         /// Gets or sets the friendly name used in a UI for this login.
         /// </summary>
         public string ProviderDisplayName { get; set; }
-
-        public virtual void Assign(UserLoginBase other)
-        {
-            UserId = other.UserId;
-            LoginProvider = other.LoginProvider;
-            ProviderKey = other.ProviderKey;
-            ProviderDisplayName = other.ProviderDisplayName;
-        }
-    }
-
-    public class UserLogin : UserLoginBase
-    {
-        // nothing
-    }
-
-    public class UserLoginHistory : UserLoginBase, IHistoryEntity<UserLoginBase>
-    {
-        /// <inheritdoc/>
-        public long TransactionId { get; set; }
-
-        /// <inheritdoc/>
-        public DateTime CreatedWhenUtc { get; set; }
-
-        /// <inheritdoc/>
-        public DateTime RetiredWhenUtc { get; set; }
     }
 }
