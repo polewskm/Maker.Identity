@@ -7,6 +7,8 @@ namespace Maker.Identity.Stores.Entities
     {
         long UserId { get; set; }
 
+        bool IsActive { get; set; }
+
         string FirstName { get; set; }
 
         string LastName { get; set; }
@@ -51,6 +53,8 @@ namespace Maker.Identity.Stores.Entities
         /// </summary>
         [PersonalData]
         public long UserId { get; set; }
+
+        public bool IsActive { get; set; }
 
         [ProtectedPersonalData]
         public string FirstName { get; set; }
@@ -144,6 +148,7 @@ namespace Maker.Identity.Stores.Entities
         public virtual void Assign(TBase other)
         {
             UserId = other.UserId;
+            IsActive = other.IsActive;
             FirstName = other.FirstName;
             LastName = other.LastName;
             UserName = other.UserName;
