@@ -1,5 +1,4 @@
-﻿using System;
-using IdGen;
+﻿using IdGen;
 using Maker.Identity.Stores.Entities;
 using Maker.Identity.Stores.Extensions;
 using Microsoft.EntityFrameworkCore;
