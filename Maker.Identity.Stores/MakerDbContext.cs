@@ -1,7 +1,9 @@
-﻿using IdGen;
+﻿using System;
+using IdGen;
 using Maker.Identity.Stores.Entities;
 using Maker.Identity.Stores.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Maker.Identity.Stores
 {
@@ -92,6 +94,8 @@ namespace Maker.Identity.Stores
     public interface IClientSecretDbContext : IClientDbContext, ISecretDbContext
     {
         DbSet<ClientSecret> ClientSecrets { get; set; }
+
+        DbSet<ClientSecretHistory> ClientSecretHistory { get; set; }
     }
 
     public class MakerDbContext : MakerDbContext<User, UserBase, UserHistory, Role, RoleBase, RoleHistory>
@@ -223,6 +227,16 @@ namespace Maker.Identity.Stores
         /// </summary>
         public DbSet<ClientSecret> ClientSecrets { get; set; }
 
+        public DbSet<ClientSecretHistory> ClientSecretHistory { get; set; }
+
+        protected virtual void OnUserModelCreating(EntityTypeBuilder<TUser> entityBuilder) { }
+
+        protected virtual void OnUserHistoryModelCreating(EntityTypeBuilder<TUserHistory> entityBuilder) { }
+
+        protected virtual void OnRoleModelCreating(EntityTypeBuilder<TRole> entityBuilder) { }
+
+        protected virtual void OnRoleHistoryModelCreating(EntityTypeBuilder<TRoleHistory> entityBuilder) { }
+
         /// <inheritdoc/>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -261,7 +275,11 @@ namespace Maker.Identity.Stores
                 entityBuilder.Property(_ => _.LockoutEndUtc);
                 entityBuilder.Property(_ => _.LockoutEnabled).IsRequired();
                 entityBuilder.Property(_ => _.AccessFailedCount).IsRequired();
-            });
+
+                OnUserModelCreating(entityBuilder);
+
+            }, OnUserHistoryModelCreating);
+
 
             modelBuilder.EntityWithHistory<UserClaim, UserClaimBase, UserClaimHistory>("UserClaimHistory", entityBuilder =>
             {
@@ -320,7 +338,10 @@ namespace Maker.Identity.Stores
 
                 entityBuilder.Property(_ => _.Name).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entityBuilder.Property(_ => _.NormalizedName).HasMaxLength(256).IsRequired().IsUnicode(false);
-            });
+
+                OnRoleModelCreating(entityBuilder);
+
+            }, OnRoleHistoryModelCreating);
 
             modelBuilder.EntityWithHistory<RoleClaim, RoleClaimBase, RoleClaimHistory>("RoleClaimHistory", entityBuilder =>
             {
