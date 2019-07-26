@@ -72,19 +72,9 @@ namespace Maker.Identity.Stores
             // nothing
         }
 
-        private TagStore<TContext, SecretTag, SecretTagBase, SecretTagHistory> CreateTagStore(long secretId)
-        {
-            SecretTag TagFactory() => new SecretTag { SecretId = secretId };
-            Expression<Func<SecretTagHistory, bool>> RetirePredicateFactory(SecretTag tag) => history =>
-                history.SecretId == tag.SecretId
-                && history.NormalizedKey == tag.NormalizedKey
-                && history.RetiredWhenUtc == Constants.MaxDateTime;
-
-            return new TagStore<TContext, SecretTag, SecretTagBase, SecretTagHistory>(Context, ErrorDescriber, SystemClock, TagFactory, RetirePredicateFactory);
-        }
-
         #region ISecretStore Members
 
+        /// <inheritdoc/>
         public virtual async Task<Secret> FindByIdAsync(long secretId, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -94,6 +84,7 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         protected override async Task BeforeDeleteAsync(Secret entity, CancellationToken cancellationToken)
         {
             await DeleteTagsAsync(entity.SecretId, cancellationToken).ConfigureAwait(false);
@@ -101,6 +92,7 @@ namespace Maker.Identity.Stores
             await base.BeforeDeleteAsync(entity, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task<IEnumerable<KeyValuePair<string, string>>> GetTagsAsync(long secretId, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -112,11 +104,12 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task UpdateTagsAsync(long secretId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var store = CreateTagStore(secretId);
+            var store = new SecretTagStore<TContext>(Context, ErrorDescriber, SystemClock, secretId);
 
             var existingTags = await Context.SecretTags
                 .Where(_ => _.SecretId == secretId)
@@ -128,7 +121,7 @@ namespace Maker.Identity.Stores
 
         private async Task DeleteTagsAsync(long secretId, CancellationToken cancellationToken)
         {
-            var store = CreateTagStore(secretId);
+            var store = new SecretTagStore<TContext>(Context, ErrorDescriber, SystemClock, secretId);
 
             var existingTags = await Context.SecretTags
                 .Where(_ => _.SecretId == secretId)

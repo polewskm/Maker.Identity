@@ -55,7 +55,8 @@ namespace Maker.Identity.Stores
     }
 
     public interface IUserSecretDbContext<TUser, TUserBase, TUserHistory> :
-        IUserDbContext<TUser, TUserBase, TUserHistory>
+        IUserDbContext<TUser, TUserBase, TUserHistory>,
+        ISecretDbContext
 
         where TUser : class, TUserBase, ISupportConcurrencyToken
         where TUserBase : class, IUserBase, ISupportAssign<TUserBase>

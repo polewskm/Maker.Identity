@@ -12,9 +12,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Stores
 {
-    public class RoleStore : RoleStore<MakerDbContext, Role, RoleBase, RoleHistory>
+    public class RoleStore : RoleStore<MakerDbContext>
     {
         public RoleStore(MakerDbContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock)
+        {
+            // nothing
+        }
+    }
+
+    public class RoleStore<TContext> : RoleStore<TContext, Role, RoleBase, RoleHistory>
+        where TContext : DbContext, IRoleDbContext<Role, RoleBase, RoleHistory>
+    {
+        public RoleStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
             : base(context, describer, systemClock)
         {
             // nothing
@@ -75,6 +85,7 @@ namespace Maker.Identity.Stores
 
         #region IRoleStore Members
 
+        /// <inheritdoc/>
         public virtual Task<string> GetRoleIdAsync(TRole role, CancellationToken cancellationToken)
         {
             if (role == null)
@@ -86,6 +97,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(ConvertIdToString(role.RoleId));
         }
 
+        /// <inheritdoc/>
         public virtual Task<string> GetRoleNameAsync(TRole role, CancellationToken cancellationToken)
         {
             if (role == null)
@@ -97,6 +109,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(role.Name);
         }
 
+        /// <inheritdoc/>
         public virtual Task SetRoleNameAsync(TRole role, string roleName, CancellationToken cancellationToken)
         {
             if (role == null)
@@ -110,6 +123,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<string> GetNormalizedRoleNameAsync(TRole role, CancellationToken cancellationToken)
         {
             if (role == null)
@@ -121,6 +135,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(role.NormalizedName);
         }
 
+        /// <inheritdoc/>
         public virtual Task SetNormalizedRoleNameAsync(TRole role, string normalizedName, CancellationToken cancellationToken)
         {
             if (role == null)
@@ -136,6 +151,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual async Task<TRole> FindByIdAsync(string roleId, CancellationToken cancellationToken)
         {
             if (roleId == null)
@@ -151,6 +167,7 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task<TRole> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
         {
             if (normalizedRoleName == null)
@@ -168,12 +185,14 @@ namespace Maker.Identity.Stores
 
         #region IQueryableRoleStore Members
 
+        /// <inheritdoc/>
         public virtual IQueryable<TRole> Roles => Context.Roles;
 
         #endregion
 
         #region IRoleClaimStore Members
 
+        /// <inheritdoc/>
         public virtual async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken)
         {
             if (role == null)
@@ -189,6 +208,7 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken)
         {
             if (role == null)
@@ -206,6 +226,7 @@ namespace Maker.Identity.Stores
             await store.CreateAsync(newRoleClaim, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken)
         {
             if (role == null)

@@ -10,21 +10,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Stores.Helpers
 {
-    public class TagStore<TContext, TEntity, TBase, THistory> : StoreBase<TContext, TEntity, TBase, THistory>
+    public abstract class TagStore<TContext, TEntity, TBase, THistory> : StoreBase<TContext, TEntity, TBase, THistory>
         where TContext : DbContext
         where TBase : Tag<TBase>, ISupportAssign<TBase>
-        where TEntity : class, TBase, ISupportConcurrencyToken, new()
+        where TEntity : class, TBase, ISupportConcurrencyToken
         where THistory : class, TBase, IHistoryEntity<TBase>, new()
     {
-        private readonly Func<TEntity> _factory;
-
-        public TagStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock, Func<TEntity> factory, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory)
+        protected TagStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock, Func<TEntity, Expression<Func<THistory, bool>>> retirePredicateFactory)
             : base(context, describer, systemClock, retirePredicateFactory)
         {
-            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
-
             AutoSaveChanges = false;
         }
+
+        protected abstract TEntity CreateTag();
 
         public virtual async Task UpdateTagsAsync(IEnumerable<KeyValuePair<string, string>> tags, IReadOnlyDictionary<string, TEntity> existingTags, CancellationToken cancellationToken)
         {
@@ -56,7 +54,8 @@ namespace Maker.Identity.Stores.Helpers
                 }
                 else
                 {
-                    var newTag = _factory();
+                    var newTag = CreateTag();
+
                     newTag.NormalizedKey = normalizedKey;
                     newTag.Key = tag.Key;
                     newTag.Value = tag.Value;

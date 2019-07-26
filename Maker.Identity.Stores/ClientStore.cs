@@ -50,15 +50,6 @@ namespace Maker.Identity.Stores
         Task UpdateTagsAsync(long clientId, IEnumerable<KeyValuePair<string, string>> tags, CancellationToken cancellationToken);
     }
 
-    public interface IClientSecretStore : IClientStore
-    {
-        Task<IEnumerable<Secret>> GetSecretsAsync(long clientId, CancellationToken cancellationToken = default);
-
-        Task AddSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default);
-
-        Task RemoveSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default);
-    }
-
     public class ClientStore : ClientStore<MakerDbContext>
     {
         public ClientStore(MakerDbContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
@@ -68,8 +59,8 @@ namespace Maker.Identity.Stores
         }
     }
 
-    public class ClientStore<TContext> : StoreBase<TContext, Client, ClientBase, ClientHistory>, IClientSecretStore
-        where TContext : DbContext, IClientSecretDbContext
+    public class ClientStore<TContext> : StoreBase<TContext, Client, ClientBase, ClientHistory>, IClientStore
+        where TContext : DbContext, IClientDbContext
     {
         // ReSharper disable once StaticMemberInGenericType
         private static readonly Func<Client, Expression<Func<ClientHistory, bool>>> RetirePredicateFactory =
@@ -79,17 +70,6 @@ namespace Maker.Identity.Stores
             : base(context, describer, systemClock, RetirePredicateFactory)
         {
             // nothing
-        }
-
-        private TagStore<TContext, ClientTag, ClientTagBase, ClientTagHistory> CreateTagStore(long clientId)
-        {
-            ClientTag TagFactory() => new ClientTag { ClientId = clientId };
-            Expression<Func<ClientTagHistory, bool>> RetirePredicateFactory(ClientTag tag) => history =>
-                history.ClientId == tag.ClientId
-                && history.NormalizedKey == tag.NormalizedKey
-                && history.RetiredWhenUtc == Constants.MaxDateTime;
-
-            return new TagStore<TContext, ClientTag, ClientTagBase, ClientTagHistory>(Context, ErrorDescriber, SystemClock, TagFactory, RetirePredicateFactory);
         }
 
         #region IClientStore Members
@@ -125,7 +105,7 @@ namespace Maker.Identity.Stores
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var store = CreateTagStore(clientId);
+            var store = new ClientTagStore<TContext>(Context, ErrorDescriber, SystemClock, clientId);
 
             var existingTags = await Context.ClientTags
                 .Where(_ => _.ClientId == clientId)
@@ -137,7 +117,7 @@ namespace Maker.Identity.Stores
 
         private async Task DeleteTagsAsync(long clientId, CancellationToken cancellationToken)
         {
-            var store = CreateTagStore(clientId);
+            var store = new ClientTagStore<TContext>(Context, ErrorDescriber, SystemClock, clientId);
 
             var existingTags = await Context.ClientTags
                 .Where(_ => _.ClientId == clientId)
@@ -145,53 +125,6 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
 
             await store.DeleteAsync(existingTags, cancellationToken).ConfigureAwait(false);
-        }
-
-        #endregion
-
-        #region IClientSecretStore Members
-
-        public virtual async Task<IEnumerable<Secret>> GetSecretsAsync(long clientId, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var query = from clientSecret in Context.ClientSecrets
-                        join secret in Context.Secrets on clientSecret.SecretId equals secret.SecretId
-                        where clientSecret.ClientId == clientId
-                        select secret;
-
-            return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        public virtual async Task AddSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var newClientSecret = new ClientSecret
-            {
-                ClientId = clientId,
-                SecretId = secretId,
-            };
-
-            var store = new ClientSecretStore<TContext>(Context, ErrorDescriber, SystemClock);
-
-            await store.CreateAsync(newClientSecret, cancellationToken).ConfigureAwait(false);
-        }
-
-        public virtual async Task RemoveSecretAsync(long clientId, long secretId, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var clientSecret = await Context.ClientSecrets
-                .SingleOrDefaultAsync(_ => _.ClientId == clientId && _.SecretId == secretId, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (clientSecret != null)
-            {
-                var store = new ClientSecretStore<TContext>(Context, ErrorDescriber, SystemClock);
-
-                await store.DeleteAsync(clientSecret, cancellationToken).ConfigureAwait(false);
-            }
         }
 
         #endregion

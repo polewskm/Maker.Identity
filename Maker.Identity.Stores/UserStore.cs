@@ -14,9 +14,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Stores
 {
-    public class UserStore : UserStore<MakerDbContext, User, UserBase, UserHistory, Role, RoleBase, RoleHistory>
+    public class UserStore : UserStore<MakerDbContext>
     {
         public UserStore(MakerDbContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
+            : base(context, describer, systemClock)
+        {
+            // nothing
+        }
+    }
+
+    public class UserStore<TContext> : UserStore<TContext, User, UserBase, UserHistory, Role, RoleBase, RoleHistory>
+        where TContext : DbContext, IUserRoleDbContext<User, UserBase, UserHistory, Role, RoleBase, RoleHistory>
+    {
+        public UserStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
             : base(context, describer, systemClock)
         {
             // nothing
@@ -206,6 +216,7 @@ namespace Maker.Identity.Stores
 
         #region IUserStore Members
 
+        /// <inheritdoc/>
         public virtual Task<string> GetUserIdAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -217,6 +228,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(ConvertIdToString(user.UserId));
         }
 
+        /// <inheritdoc/>
         public virtual Task<string> GetUserNameAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -228,6 +240,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.UserName);
         }
 
+        /// <inheritdoc/>
         public virtual Task SetUserNameAsync(TUser user, string userName, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -241,6 +254,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<string> GetNormalizedUserNameAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -252,6 +266,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.NormalizedUserName);
         }
 
+        /// <inheritdoc/>
         public virtual Task SetNormalizedUserNameAsync(TUser user, string normalizedName, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -265,6 +280,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual async Task<TUser> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
             if (userId == null)
@@ -280,6 +296,7 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task<TUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
             if (normalizedUserName == null)
@@ -297,6 +314,7 @@ namespace Maker.Identity.Stores
 
         #region IUserRoleStore Members
 
+        /// <inheritdoc/>
         public virtual async Task AddToRoleAsync(TUser user, string normalizedRoleName, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -320,6 +338,7 @@ namespace Maker.Identity.Stores
             await store.CreateAsync(newUserRole, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task RemoveFromRoleAsync(TUser user, string normalizedRoleName, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -343,6 +362,7 @@ namespace Maker.Identity.Stores
             }
         }
 
+        /// <inheritdoc/>
         public virtual async Task<IList<string>> GetRolesAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -359,6 +379,7 @@ namespace Maker.Identity.Stores
             return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task<bool> IsInRoleAsync(TUser user, string normalizedRoleName, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -377,6 +398,7 @@ namespace Maker.Identity.Stores
             return userRole != null;
         }
 
+        /// <inheritdoc/>
         public virtual async Task<IList<TUser>> GetUsersInRoleAsync(string normalizedRoleName, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(normalizedRoleName))
@@ -401,6 +423,7 @@ namespace Maker.Identity.Stores
 
         #region IUserLoginStore Members
 
+        /// <inheritdoc/>
         public virtual async Task AddLoginAsync(TUser user, UserLoginInfo login, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -418,6 +441,7 @@ namespace Maker.Identity.Stores
             await store.CreateAsync(newUserLogin, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task RemoveLoginAsync(TUser user, string loginProvider, string providerKey, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -441,6 +465,7 @@ namespace Maker.Identity.Stores
             }
         }
 
+        /// <inheritdoc/>
         public virtual async Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -459,6 +484,7 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task<TUser> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken)
         {
             ThrowIfDisposed();
@@ -476,6 +502,7 @@ namespace Maker.Identity.Stores
 
         #region IUserClaimStore Members
 
+        /// <inheritdoc/>
         public virtual async Task<IList<Claim>> GetClaimsAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -491,6 +518,7 @@ namespace Maker.Identity.Stores
                 .ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task AddClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -508,6 +536,7 @@ namespace Maker.Identity.Stores
             await store.CreateAsync(userClaims, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task ReplaceClaimAsync(TUser user, Claim claim, Claim newClaim, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -539,6 +568,7 @@ namespace Maker.Identity.Stores
             await store.UpdateAsync(matchedClaims, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public virtual async Task RemoveClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -565,6 +595,7 @@ namespace Maker.Identity.Stores
             }
         }
 
+        /// <inheritdoc/>
         public virtual async Task<IList<TUser>> GetUsersForClaimAsync(Claim claim, CancellationToken cancellationToken)
         {
             if (claim == null)
@@ -585,6 +616,7 @@ namespace Maker.Identity.Stores
 
         #region IUserPasswordStore Members
 
+        /// <inheritdoc/>
         public virtual Task SetPasswordHashAsync(TUser user, string passwordHash, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -598,6 +630,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<string> GetPasswordHashAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -609,6 +642,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.PasswordHash);
         }
 
+        /// <inheritdoc/>
         public virtual Task<bool> HasPasswordAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -624,6 +658,7 @@ namespace Maker.Identity.Stores
 
         #region IUserSecurityStampStore Members
 
+        /// <inheritdoc/>
         public virtual Task SetSecurityStampAsync(TUser user, string stamp, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -637,6 +672,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<string> GetSecurityStampAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -652,6 +688,7 @@ namespace Maker.Identity.Stores
 
         #region IUserEmailStore Members
 
+        /// <inheritdoc/>
         public virtual Task SetEmailAsync(TUser user, string email, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -665,6 +702,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<string> GetEmailAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -676,6 +714,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.Email);
         }
 
+        /// <inheritdoc/>
         public virtual Task<bool> GetEmailConfirmedAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -687,6 +726,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.EmailConfirmed);
         }
 
+        /// <inheritdoc/>
         public virtual Task SetEmailConfirmedAsync(TUser user, bool confirmed, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -700,6 +740,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<string> GetNormalizedEmailAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -711,6 +752,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.NormalizedEmail);
         }
 
+        /// <inheritdoc/>
         public virtual Task SetNormalizedEmailAsync(TUser user, string normalizedEmail, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -724,6 +766,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual async Task<TUser> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
         {
             if (normalizedEmail == null)
@@ -742,6 +785,7 @@ namespace Maker.Identity.Stores
 
         #region IUserLockoutStore Members
 
+        /// <inheritdoc/>
         public virtual Task<DateTimeOffset?> GetLockoutEndDateAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -753,6 +797,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.LockoutEndUtc?.ToDateTimeOffset(TimeSpan.Zero));
         }
 
+        /// <inheritdoc/>
         public virtual Task SetLockoutEndDateAsync(TUser user, DateTimeOffset? lockoutEnd, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -766,6 +811,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<int> IncrementAccessFailedCountAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -779,6 +825,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.AccessFailedCount);
         }
 
+        /// <inheritdoc/>
         public virtual Task ResetAccessFailedCountAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -792,6 +839,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<int> GetAccessFailedCountAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -803,6 +851,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.AccessFailedCount);
         }
 
+        /// <inheritdoc/>
         public virtual Task<bool> GetLockoutEnabledAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -814,6 +863,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.LockoutEnabled);
         }
 
+        /// <inheritdoc/>
         public virtual Task SetLockoutEnabledAsync(TUser user, bool enabled, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -831,6 +881,7 @@ namespace Maker.Identity.Stores
 
         #region IUserPhoneNumberStore Members
 
+        /// <inheritdoc/>
         public virtual Task SetPhoneNumberAsync(TUser user, string phoneNumber, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -844,6 +895,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<string> GetPhoneNumberAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -855,6 +907,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.PhoneNumber);
         }
 
+        /// <inheritdoc/>
         public virtual Task<bool> GetPhoneNumberConfirmedAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -866,6 +919,7 @@ namespace Maker.Identity.Stores
             return Task.FromResult(user.PhoneNumberConfirmed);
         }
 
+        /// <inheritdoc/>
         public virtual Task SetPhoneNumberConfirmedAsync(TUser user, bool confirmed, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -883,12 +937,14 @@ namespace Maker.Identity.Stores
 
         #region IQueryableUserStore Members
 
-        public IQueryable<TUser> Users => Context.Users;
+        /// <inheritdoc/>
+        public virtual IQueryable<TUser> Users => Context.Users;
 
         #endregion
 
         #region IUserTwoFactorStore Members
 
+        /// <inheritdoc/>
         public virtual Task SetTwoFactorEnabledAsync(TUser user, bool enabled, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -902,6 +958,7 @@ namespace Maker.Identity.Stores
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual Task<bool> GetTwoFactorEnabledAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -917,6 +974,7 @@ namespace Maker.Identity.Stores
 
         #region IUserAuthenticationTokenStore Members
 
+        /// <inheritdoc/>
         public virtual async Task SetTokenAsync(TUser user, string loginProvider, string name, string value, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -937,6 +995,7 @@ namespace Maker.Identity.Stores
             }
         }
 
+        /// <inheritdoc/>
         public virtual async Task RemoveTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -952,6 +1011,7 @@ namespace Maker.Identity.Stores
             }
         }
 
+        /// <inheritdoc/>
         public virtual async Task<string> GetTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -968,9 +1028,11 @@ namespace Maker.Identity.Stores
 
         #region IUserAuthenticatorKeyStore Members
 
+        /// <inheritdoc/>
         public virtual Task SetAuthenticatorKeyAsync(TUser user, string key, CancellationToken cancellationToken)
             => SetTokenAsync(user, InternalLoginProvider, AuthenticatorKeyTokenName, key, cancellationToken);
 
+        /// <inheritdoc/>
         public virtual Task<string> GetAuthenticatorKeyAsync(TUser user, CancellationToken cancellationToken)
             => GetTokenAsync(user, InternalLoginProvider, AuthenticatorKeyTokenName, cancellationToken);
 
@@ -980,6 +1042,7 @@ namespace Maker.Identity.Stores
 
         private const string CodeDelimiter = ";";
 
+        /// <inheritdoc/>
         public virtual Task ReplaceCodesAsync(TUser user, IEnumerable<string> recoveryCodes, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -991,6 +1054,7 @@ namespace Maker.Identity.Stores
             return SetTokenAsync(user, InternalLoginProvider, RecoveryCodeTokenName, mergedCodes, cancellationToken);
         }
 
+        /// <inheritdoc/>
         public virtual async Task<bool> RedeemCodeAsync(TUser user, string code, CancellationToken cancellationToken)
         {
             if (user == null)
@@ -1010,6 +1074,7 @@ namespace Maker.Identity.Stores
             return true;
         }
 
+        /// <inheritdoc/>
         public virtual async Task<int> CountCodesAsync(TUser user, CancellationToken cancellationToken)
         {
             if (user == null)
