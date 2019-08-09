@@ -2,34 +2,19 @@
 
 namespace Maker.Identity.Stores.Entities
 {
-    public abstract class RoleClaimBase : ISupportAssign<RoleClaimBase>
+    public abstract class RoleClaimBase : ClaimBase<RoleClaimBase>
     {
-        /// <summary>
-        /// Gets or sets the identifier for this role claim.
-        /// </summary>
-        public long RoleClaimId { get; set; }
-
         /// <summary>
         /// Gets or sets the of the primary key of the role associated with this claim.
         /// </summary>
         public long RoleId { get; set; }
 
-        /// <summary>
-        /// Gets or sets the claim type for this claim.
-        /// </summary>
-        public string ClaimType { get; set; }
-
-        /// <summary>
-        /// Gets or sets the claim value for this claim.
-        /// </summary>
-        public string ClaimValue { get; set; }
-
-        public virtual void Assign(RoleClaimBase other)
+        /// <inheritdoc/>
+        public override void Assign(RoleClaimBase other)
         {
-            RoleClaimId = other.RoleClaimId;
+            base.Assign(other);
+
             RoleId = other.RoleId;
-            ClaimType = other.ClaimType;
-            ClaimValue = other.ClaimValue;
         }
     }
 

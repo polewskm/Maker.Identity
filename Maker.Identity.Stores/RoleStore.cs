@@ -94,7 +94,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return Task.FromResult(ConvertIdToString(role.RoleId));
+            return Task.FromResult(ConvertToStringId(role.RoleId));
         }
 
         /// <inheritdoc/>
@@ -157,10 +157,10 @@ namespace Maker.Identity.Stores
             if (roleId == null)
                 throw new ArgumentNullException(nameof(roleId));
 
+            var id = ConvertFromStringId(roleId, nameof(roleId));
+
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
-
-            var id = ConvertIdFromString(roleId);
 
             return await Context.Roles
                 .FirstOrDefaultAsync(_ => _.RoleId == id, cancellationToken)

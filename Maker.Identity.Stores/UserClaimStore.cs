@@ -12,7 +12,7 @@ namespace Maker.Identity.Stores
     {
         // ReSharper disable once StaticMemberInGenericType
         private static readonly Func<UserClaim, Expression<Func<UserClaimHistory, bool>>> RetirePredicateFactory =
-            roleClaim => history => history.UserClaimId == roleClaim.UserClaimId && history.RetiredWhenUtc == Constants.MaxDateTime;
+            roleClaim => history => history.ClaimId == roleClaim.ClaimId && history.RetiredWhenUtc == Constants.MaxDateTime;
 
         public UserClaimStore(TContext context, IdentityErrorDescriber describer, ISystemClock systemClock)
             : base(context, describer, systemClock, RetirePredicateFactory)

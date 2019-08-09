@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -41,16 +41,26 @@ namespace Maker.Identity.Stores.Helpers
         }
 
         /// <summary>
-        /// Converts the provided <paramref name="id"/> to a strongly typed <see cref="long"/>.
+        /// Converts the provided <paramref name="value"/> to a strongly typed <see cref="long"/>.
         /// </summary>
-        protected virtual long ConvertIdFromString(string id)
-            => id == null ? 0L : (long)(TypeDescriptor.GetConverter(typeof(long)).ConvertFromInvariantString(id) ?? 0L);
+        protected virtual long ConvertFromStringId(string value, string paramName)
+        {
+            if (string.IsNullOrEmpty(value))
+                return 0L;
+
+            if (!long.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
+                throw new ArgumentException("Input string was not in a correct format.", paramName);
+
+            return result;
+        }
 
         /// <summary>
-        /// Converts the provided <paramref name="id"/> to its string representation.
+        /// Converts the provided <paramref name="value"/> to its string representation.
         /// </summary>
-        protected virtual string ConvertIdToString(long id)
-            => id == 0L ? null : id.ToString();
+        protected virtual string ConvertToStringId(long value)
+        {
+            return value == 0L ? null : value.ToString();
+        }
 
         public virtual Task SaveChangesAsync(CancellationToken cancellationToken)
         {

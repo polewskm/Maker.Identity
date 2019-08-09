@@ -9,8 +9,13 @@ using System.Threading.Tasks;
 using Maker.Identity.Stores.Entities;
 using Maker.Identity.Stores.Extensions;
 using Maker.Identity.Stores.Helpers;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ISystemClock = Maker.Identity.Stores.Helpers.ISystemClock;
 
 namespace Maker.Identity.Stores
 {
@@ -90,11 +95,12 @@ namespace Maker.Identity.Stores
         /// <param name="claim">The associated claim.</param>
         /// <returns></returns>
         protected virtual UserClaim CreateUserClaim(TUser user, Claim claim)
-        {
-            var userClaim = new UserClaim { UserId = user.UserId };
-            userClaim.InitializeFromClaim(claim);
-            return userClaim;
-        }
+            => new UserClaim
+            {
+                UserId = user.UserId,
+                ClaimType = claim.Type,
+                ClaimValue = claim.Value
+            };
 
         /// <summary>
         /// Called to create a new instance of a <see cref="UserLogin"/>.
@@ -103,15 +109,13 @@ namespace Maker.Identity.Stores
         /// <param name="login">The associated login.</param>
         /// <returns></returns>
         protected virtual UserLogin CreateUserLogin(TUser user, UserLoginInfo login)
-        {
-            return new UserLogin
+            => new UserLogin
             {
                 UserId = user.UserId,
                 ProviderKey = login.ProviderKey,
                 LoginProvider = login.LoginProvider,
                 ProviderDisplayName = login.ProviderDisplayName
             };
-        }
 
         /// <summary>
         /// Called to create a new instance of a <see cref="UserToken"/>.
@@ -122,15 +126,13 @@ namespace Maker.Identity.Stores
         /// <param name="value">The value of the user token.</param>
         /// <returns></returns>
         protected virtual UserToken CreateUserToken(TUser user, string loginProvider, string name, string value)
-        {
-            return new UserToken
+            => new UserToken
             {
                 UserId = user.UserId,
                 LoginProvider = loginProvider,
                 Name = name,
                 Value = value
             };
-        }
 
         /// <summary>
         /// Called to create a new instance of a <see cref="UserRole"/>.
@@ -139,13 +141,11 @@ namespace Maker.Identity.Stores
         /// <param name="role">The associated role.</param>
         /// <returns></returns>
         protected virtual UserRole CreateUserRole(TUser user, TRole role)
-        {
-            return new UserRole
+            => new UserRole
             {
                 UserId = user.UserId,
                 RoleId = role.RoleId
             };
-        }
 
         #endregion
 
@@ -225,7 +225,7 @@ namespace Maker.Identity.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            return Task.FromResult(ConvertIdToString(user.UserId));
+            return Task.FromResult(ConvertToStringId(user.UserId));
         }
 
         /// <inheritdoc/>
@@ -286,10 +286,10 @@ namespace Maker.Identity.Stores
             if (userId == null)
                 throw new ArgumentNullException(nameof(userId));
 
+            var id = ConvertFromStringId(userId, nameof(userId));
+
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
-
-            var id = ConvertIdFromString(userId);
 
             return await Context.Users
                 .FirstOrDefaultAsync(_ => _.UserId == id, cancellationToken)
@@ -512,8 +512,8 @@ namespace Maker.Identity.Stores
             cancellationToken.ThrowIfCancellationRequested();
 
             return await Context.UserClaims
-                .Where(userClaim => userClaim.UserId == user.UserId)
-                .Select(userClaim => userClaim.ToClaim())
+                .Where(_ => _.UserId == user.UserId)
+                .Select(_ => new Claim(_.ClaimType, _.ClaimValue))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -1087,4 +1087,54 @@ namespace Maker.Identity.Stores
         #endregion
 
     }
+
+    public class UserManager2<TUser> : UserManager<TUser>
+        where TUser : class, IUserBase
+    {
+        public UserManager2(IUserStore<TUser> store, IOptions<IdentityOptions> optionsAccessor, IPasswordHasher<TUser> passwordHasher, IEnumerable<IUserValidator<TUser>> userValidators, IEnumerable<IPasswordValidator<TUser>> passwordValidators, ILookupNormalizer keyNormalizer, IdentityErrorDescriber errors, IServiceProvider services, ILogger<UserManager<TUser>> logger)
+            : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger)
+        {
+        }
+
+        public override async Task<bool> CheckPasswordAsync(TUser user, string password)
+        {
+            var result = await base.CheckPasswordAsync(user, password).ConfigureAwait(false);
+
+            // TODO: audit
+
+            return result;
+        }
+
+    }
+
+    public class SignInManager2<TUser> : SignInManager<TUser>
+        where TUser : class, IUserBase
+    {
+        public SignInManager2(UserManager<TUser> userManager, IHttpContextAccessor contextAccessor, IUserClaimsPrincipalFactory<TUser> claimsFactory, IOptions<IdentityOptions> optionsAccessor, ILogger<SignInManager<TUser>> logger, IAuthenticationSchemeProvider schemes)
+            : base(userManager, contextAccessor, claimsFactory, optionsAccessor, logger, schemes)
+        {
+        }
+
+        public override Task<bool> CanSignInAsync(TUser user)
+        {
+            if (!user.IsActive)
+            {
+                Logger.LogWarning(0, "User {userId} cannot sign in because they are disabled.", user.UserId);
+                return Task.FromResult(false);
+            }
+
+            return base.CanSignInAsync(user);
+        }
+
+        public override async Task<SignInResult> CheckPasswordSignInAsync(TUser user, string password, bool lockoutOnFailure)
+        {
+            var result = await base.CheckPasswordSignInAsync(user, password, lockoutOnFailure).ConfigureAwait(false);
+
+            // TODO: audit
+
+            return result;
+        }
+
+    }
+
 }

@@ -283,9 +283,9 @@ namespace Maker.Identity.Stores
             modelBuilder.EntityWithHistory<UserClaim, UserClaimBase, UserClaimHistory>("UserClaimHistory", entityBuilder =>
             {
                 entityBuilder.ToTable("UserClaims", schemaName);
-                entityBuilder.HasKey(_ => _.UserClaimId);
+                entityBuilder.HasKey(_ => _.ClaimId);
 
-                entityBuilder.Property(_ => _.UserClaimId).UseIdGen();
+                entityBuilder.Property(_ => _.ClaimId).UseIdGen();
                 entityBuilder.Property(_ => _.ClaimType).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entityBuilder.Property(_ => _.ClaimValue).IsRequired().IsUnicode(false);
 
@@ -345,9 +345,9 @@ namespace Maker.Identity.Stores
             modelBuilder.EntityWithHistory<RoleClaim, RoleClaimBase, RoleClaimHistory>("RoleClaimHistory", entityBuilder =>
             {
                 entityBuilder.ToTable("RoleClaims", schemaName);
-                entityBuilder.HasKey(_ => _.RoleClaimId);
+                entityBuilder.HasKey(_ => _.ClaimId);
 
-                entityBuilder.Property(_ => _.RoleClaimId).UseIdGen();
+                entityBuilder.Property(_ => _.ClaimId).UseIdGen();
                 entityBuilder.Property(_ => _.ClaimType).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entityBuilder.Property(_ => _.ClaimValue).IsRequired().IsUnicode(false);
 
