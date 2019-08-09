@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,7 +15,17 @@ namespace Maker.Identity.Stores.Helpers
         Task SaveChangesAsync(CancellationToken cancellationToken);
     }
 
-    public abstract class StoreBase<TContext, TEntity> : IStore
+    public interface IStore<in TEntity> : IStore
+        where TEntity : class
+    {
+        Task<IdentityResult> CreateAsync(TEntity entity, CancellationToken cancellationToken);
+
+        Task<IdentityResult> UpdateAsync(TEntity entity, CancellationToken cancellationToken);
+
+        Task<IdentityResult> DeleteAsync(TEntity entity, CancellationToken cancellationToken);
+    }
+
+    public abstract class StoreBase<TContext, TEntity> : IStore<TEntity>
         where TContext : DbContext
         where TEntity : class
     {
@@ -82,27 +91,16 @@ namespace Maker.Identity.Stores.Helpers
 
         #region Create Members
 
-        public virtual Task<IdentityResult> CreateAsync(TEntity entity, CancellationToken cancellationToken)
+        public virtual async Task<IdentityResult> CreateAsync(TEntity entity, CancellationToken cancellationToken)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            return CreateAsync(new[] { entity }, cancellationToken);
-        }
+            await BeforeCreateAsync(entity, cancellationToken).ConfigureAwait(false);
 
-        public virtual async Task<IdentityResult> CreateAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken)
-        {
-            if (entities == null)
-                throw new ArgumentNullException(nameof(entities));
+            Context.Set<TEntity>().Add(entity);
 
-            foreach (var entity in entities)
-            {
-                await BeforeCreateAsync(entity, cancellationToken).ConfigureAwait(false);
-
-                Context.Set<TEntity>().Add(entity);
-
-                await AfterCreateAsync(entity, cancellationToken).ConfigureAwait(false);
-            }
+            await AfterCreateAsync(entity, cancellationToken).ConfigureAwait(false);
 
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -121,33 +119,22 @@ namespace Maker.Identity.Stores.Helpers
 
         #region Update Members
 
-        public virtual Task<IdentityResult> UpdateAsync(TEntity entity, CancellationToken cancellationToken)
+        public virtual async Task<IdentityResult> UpdateAsync(TEntity entity, CancellationToken cancellationToken)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            return UpdateAsync(new[] { entity }, cancellationToken);
-        }
+            if (!Context.Set<TEntity>().Local.Contains(entity))
+                Context.Set<TEntity>().Attach(entity);
 
-        public virtual async Task<IdentityResult> UpdateAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken)
-        {
-            if (entities == null)
-                throw new ArgumentNullException(nameof(entities));
+            if (entity is ISupportConcurrencyToken supportConcurrencyToken)
+                supportConcurrencyToken.ConcurrencyStamp = Guid.NewGuid().ToString();
 
-            foreach (var entity in entities)
-            {
-                if (!Context.Set<TEntity>().Local.Contains(entity))
-                    Context.Set<TEntity>().Attach(entity);
+            await BeforeUpdateAsync(entity, cancellationToken).ConfigureAwait(false);
 
-                if (entity is ISupportConcurrencyToken supportConcurrencyToken)
-                    supportConcurrencyToken.ConcurrencyStamp = Guid.NewGuid().ToString();
+            Context.Set<TEntity>().Update(entity);
 
-                await BeforeUpdateAsync(entity, cancellationToken).ConfigureAwait(false);
-
-                Context.Set<TEntity>().Update(entity);
-
-                await AfterUpdateAsync(entity, cancellationToken).ConfigureAwait(false);
-            }
+            await AfterUpdateAsync(entity, cancellationToken).ConfigureAwait(false);
 
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -166,21 +153,13 @@ namespace Maker.Identity.Stores.Helpers
 
         #region Delete Members
 
-        public virtual Task<IdentityResult> DeleteAsync(TEntity entity, CancellationToken cancellationToken)
+        public virtual async Task<IdentityResult> DeleteAsync(TEntity entity, CancellationToken cancellationToken)
         {
-            return DeleteAsync(new[] { entity }, cancellationToken);
-        }
+            await BeforeDeleteAsync(entity, cancellationToken).ConfigureAwait(false);
 
-        public virtual async Task<IdentityResult> DeleteAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken)
-        {
-            foreach (var entity in entities)
-            {
-                await BeforeDeleteAsync(entity, cancellationToken).ConfigureAwait(false);
+            Context.Set<TEntity>().Remove(entity);
 
-                Context.Set<TEntity>().Remove(entity);
-
-                await AfterDeleteAsync(entity, cancellationToken).ConfigureAwait(false);
-            }
+            await AfterDeleteAsync(entity, cancellationToken).ConfigureAwait(false);
 
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }

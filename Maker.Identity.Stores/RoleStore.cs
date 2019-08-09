@@ -239,7 +239,7 @@ namespace Maker.Identity.Stores
 
             var store = new RoleClaimStore<TContext>(Context, ErrorDescriber, SystemClock);
 
-            var claims = await Context.RoleClaims
+            var roleClaims = await Context.RoleClaims
                 .Where(_ =>
                     _.RoleId == role.RoleId &&
                     _.ClaimValue == claim.Value &&
@@ -247,7 +247,10 @@ namespace Maker.Identity.Stores
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            await store.DeleteAsync(claims, cancellationToken).ConfigureAwait(false);
+            foreach (var roleClaim in roleClaims)
+            {
+                await store.DeleteAsync(roleClaim, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         #endregion

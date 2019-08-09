@@ -531,9 +531,12 @@ namespace Maker.Identity.Stores
 
             var store = new UserClaimStore<TContext>(Context, ErrorDescriber, SystemClock);
 
-            var userClaims = claims.Select(claim => CreateUserClaim(user, claim));
+            var newClaims = claims.Select(claim => CreateUserClaim(user, claim));
 
-            await store.CreateAsync(userClaims, cancellationToken).ConfigureAwait(false);
+            foreach (var userClaim in newClaims)
+            {
+                await store.CreateAsync(userClaim, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         /// <inheritdoc/>
@@ -557,15 +560,15 @@ namespace Maker.Identity.Stores
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
+            var store = new UserClaimStore<TContext>(Context, ErrorDescriber, SystemClock);
+
             foreach (var matchedClaim in matchedClaims)
             {
                 matchedClaim.ClaimType = newClaim.Type;
                 matchedClaim.ClaimValue = newClaim.Value;
+
+                await store.UpdateAsync(matchedClaim, cancellationToken).ConfigureAwait(false);
             }
-
-            var store = new UserClaimStore<TContext>(Context, ErrorDescriber, SystemClock);
-
-            await store.UpdateAsync(matchedClaims, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -591,7 +594,10 @@ namespace Maker.Identity.Stores
                     .ToListAsync(cancellationToken)
                     .ConfigureAwait(false);
 
-                await store.DeleteAsync(matchedClaims, cancellationToken).ConfigureAwait(false);
+                foreach (var matchedClaim in matchedClaims)
+                {
+                    await store.DeleteAsync(matchedClaim, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 

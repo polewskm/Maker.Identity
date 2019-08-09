@@ -65,11 +65,12 @@ namespace Maker.Identity.Stores.Helpers
                 }
             }
 
-            var tagsToBeRemoved = existingTags.Values.Where(existingTag => !visitor.Contains(existingTag.Key)).ToList();
-            if (tagsToBeRemoved.Count > 0)
+            var removeTags = existingTags.Values.Where(existingTag => !visitor.Contains(existingTag.Key));
+            foreach (var removeTag in removeTags)
             {
-                await DeleteAsync(tagsToBeRemoved, cancellationToken).ConfigureAwait(false);
+                await DeleteAsync(removeTag, cancellationToken).ConfigureAwait(false);
                 dirty = true;
+
             }
 
             if (!dirty) return;

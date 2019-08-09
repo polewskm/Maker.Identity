@@ -128,7 +128,10 @@ namespace Maker.Identity.Stores
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            await store.DeleteAsync(existingTags, cancellationToken).ConfigureAwait(false);
+            foreach (var existingTag in existingTags)
+            {
+                await store.DeleteAsync(existingTag, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         #endregion
