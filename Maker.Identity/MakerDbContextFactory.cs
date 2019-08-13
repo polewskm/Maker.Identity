@@ -1,4 +1,5 @@
-﻿using IdGen;
+﻿using System.Reflection;
+using IdGen;
 using Maker.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
@@ -9,8 +10,9 @@ namespace Maker.Identity
     {
         public MakerDbContext CreateDbContext(string[] args)
         {
+            var assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
             var optionsBuilder = new DbContextOptionsBuilder<MakerDbContext>();
-            optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Maker.Identity;Trusted_Connection=True;MultipleActiveResultSets=True");
+            optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Maker.Identity;Trusted_Connection=True;MultipleActiveResultSets=True", b => b.MigrationsAssembly(assemblyName));
 
             var idGenerator = new IdGenerator(0);
 
