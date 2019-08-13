@@ -1,6 +1,6 @@
-﻿namespace Maker.Identity.Contracts.Entities
+﻿namespace Maker.Identity.Contracts.Audit
 {
-    public enum AuditChangeType : byte
+    public enum ChangeType : byte
     {
         Unknown = 0,
         Insert = 1,

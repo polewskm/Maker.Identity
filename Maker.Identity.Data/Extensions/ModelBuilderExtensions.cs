@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Maker.Identity.Contracts.Audit;
 using Maker.Identity.Contracts.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -11,12 +12,12 @@ namespace Maker.Identity.Data.Extensions
 {
     public static class ModelBuilderExtensions
     {
-        private const string KeySkipAudit = "MakerIdentity:SkipAudit";
+        private const string KeySkipChangeAudit = "MakerIdentity:SkipChangeAudit";
         private const string KeyUseIdGen = "MakerIdentity:UseIdGen";
 
         public static bool ShouldAuditChanges(this EntityEntry entityEntry)
         {
-            if (entityEntry.Entity is AuditChange || entityEntry.Metadata.SkipAudit())
+            if (entityEntry.Entity is ChangeEvent || entityEntry.Metadata.SkipChangeAudit())
                 return false;
 
             switch (entityEntry.State)
@@ -29,25 +30,25 @@ namespace Maker.Identity.Data.Extensions
             return true;
         }
 
-        public static bool SkipAudit(this IAnnotatable item)
+        public static bool SkipChangeAudit(this IAnnotatable item)
         {
-            return item.FindAnnotation(KeySkipAudit)?.Value as bool? == true;
+            return item.FindAnnotation(KeySkipChangeAudit)?.Value as bool? == true;
         }
 
-        public static EntityTypeBuilder<T> SkipAudit<T>(this EntityTypeBuilder<T> builder, bool skipAudit = true)
+        public static EntityTypeBuilder<T> SkipChangeAudit<T>(this EntityTypeBuilder<T> builder, bool skipAudit = true)
             where T : class
         {
-            return builder.HasAnnotation(KeySkipAudit, skipAudit);
+            return builder.HasAnnotation(KeySkipChangeAudit, skipAudit);
         }
 
-        public static PropertyBuilder<T> SkipAudit<T>(this PropertyBuilder<T> builder, bool skipAudit = true)
+        public static PropertyBuilder<T> SkipChangeAudit<T>(this PropertyBuilder<T> builder, bool skipAudit = true)
         {
-            return builder.HasAnnotation(KeySkipAudit, skipAudit);
+            return builder.HasAnnotation(KeySkipChangeAudit, skipAudit);
         }
 
         public static PropertyBuilder<T> IsConcurrencyStamp<T>(this PropertyBuilder<T> builder)
         {
-            return builder.HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken().SkipAudit();
+            return builder.HasMaxLength(50).IsRequired().IsUnicode(false).IsConcurrencyToken().SkipChangeAudit();
         }
 
         public static PropertyBuilder<T> UseIdGen<T>(this PropertyBuilder<T> builder, bool useIdGen = true)

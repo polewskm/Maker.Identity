@@ -17,6 +17,12 @@ namespace Maker.Identity.Data
             Context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        public virtual async Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public IChangeEventRepository ChangeEventRepository { get; }
         public IUserRepository UserRepository { get; }
         public IUserClaimRepository UserClaimRepository { get; }
         public IUserLoginRepository UserLoginRepository { get; }
@@ -30,11 +36,5 @@ namespace Maker.Identity.Data
         public IClientSecretRepository ClientSecretRepository { get; }
         public ISecretRepository SecretRepository { get; }
         public ISecretTagRepository SecretTagRepository { get; }
-
-        public virtual async Task CommitAsync(CancellationToken cancellationToken = default)
-        {
-            await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
-
     }
 }

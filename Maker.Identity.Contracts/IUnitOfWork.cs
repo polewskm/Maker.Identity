@@ -8,6 +8,8 @@ namespace Maker.Identity.Contracts
     {
         Task CommitAsync(CancellationToken cancellationToken = default);
 
+        IChangeEventRepository ChangeEventRepository { get; }
+
         IUserRepository UserRepository { get; }
 
         IUserClaimRepository UserClaimRepository { get; }

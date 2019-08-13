@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using IdGen;
+using Maker.Identity.Contracts.Audit;
 using Maker.Identity.Contracts.Entities;
 using Maker.Identity.Data.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -36,9 +37,14 @@ namespace Maker.Identity.Data
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="DbSet{TEntity}" /> of audit changes.
+        /// Gets or sets the <see cref="DbSet{TEntity}" /> of audit change events.
         /// </summary>
-        public DbSet<AuditChange> AuditChanges { get; set; }
+        public DbSet<ChangeEvent> ChangeEvents { get; set; }
+
+        /// <summary>
+        /// Gets or sets the <see cref="DbSet{TEntity}" /> of audit user events.
+        /// </summary>
+        public DbSet<UserEvent> UserEvents { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}" /> of users.
@@ -114,18 +120,36 @@ namespace Maker.Identity.Data
         {
             const string schemaName = "Identity";
 
-            modelBuilder.Entity<AuditChange>(entityBuilder =>
+            modelBuilder.Entity<ChangeEvent>(entityBuilder =>
             {
-                entityBuilder.ToTable("AuditChanges", schemaName).SkipAudit();
+                entityBuilder.ToTable("ChangeEvents", schemaName).SkipChangeAudit();
 
                 entityBuilder.HasKey(_ => _.Id);
                 entityBuilder.HasIndex(_ => new { _.PrincipalName, _.PrincipalKey, _.TimestampUtc }).IsUnique();
 
                 entityBuilder.Property(_ => _.Id).UseIdGen();
                 entityBuilder.Property(_ => _.ChangeType).HasConversion<byte>();
-                entityBuilder.Property(_ => _.PrincipalName).HasMaxLength(256).IsRequired();
-                entityBuilder.Property(_ => _.PrincipalKey).HasMaxLength(32).IsFixedLength().IsRequired();
-                entityBuilder.Property(_ => _.KeyValues).IsRequired();
+                entityBuilder.Property(_ => _.UserName).HasMaxLength(256).IsUnicode(false);
+                entityBuilder.Property(_ => _.PrincipalName).HasMaxLength(256).IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.PrincipalKey).HasMaxLength(32).IsFixedLength().IsRequired().IsUnicode(false);
+                entityBuilder.Property(_ => _.KeyValues).IsRequired().IsUnicode(false);
+            });
+
+            modelBuilder.Entity<UserEvent>(entityBuilder =>
+            {
+                entityBuilder.ToTable("UserEvents", schemaName).SkipChangeAudit();
+
+                entityBuilder.HasKey(_ => _.Id);
+                entityBuilder.HasIndex(_ => new { _.UserId, _.TimestampUtc });
+                entityBuilder.HasIndex(_ => _.ActivityId);
+
+                entityBuilder.Property(_ => _.Id).UseIdGen();
+                entityBuilder.Property(_ => _.EventType).HasConversion<int>().IsRequired();
+                entityBuilder.Property(_ => _.ActivityId).HasMaxLength(50).IsUnicode(false);
+                entityBuilder.Property(_ => _.AuthenticationMethod).HasMaxLength(50).IsUnicode(false);
+
+                entityBuilder.HasOne<User>().WithMany().HasForeignKey(_ => _.UserId).IsRequired();
+                entityBuilder.HasOne<Client>().WithMany().HasForeignKey(_ => _.ClientId);
             });
 
             modelBuilder.Entity<User>(entityBuilder =>
@@ -180,7 +204,7 @@ namespace Maker.Identity.Data
 
             modelBuilder.Entity<UserLogin>(entityBuilder =>
             {
-                entityBuilder.ToTable("UserLogins", schemaName).SkipAudit();
+                entityBuilder.ToTable("UserLogins", schemaName).SkipChangeAudit();
 
                 entityBuilder.HasKey(_ => _.Id);
                 entityBuilder.HasIndex(_ => new { _.LoginProvider, _.ProviderKey }).IsUnique();
@@ -196,7 +220,7 @@ namespace Maker.Identity.Data
 
             modelBuilder.Entity<UserToken>(entityBuilder =>
             {
-                entityBuilder.ToTable("UserTokens", schemaName).SkipAudit();
+                entityBuilder.ToTable("UserTokens", schemaName).SkipChangeAudit();
 
                 entityBuilder.HasKey(_ => _.Id);
                 entityBuilder.HasIndex(_ => new { _.UserId, _.LoginProvider, _.Name }).IsUnique();
@@ -346,12 +370,12 @@ namespace Maker.Identity.Data
 
                 var changes = ChangeTracker.Entries()
                     .Where(_ => _.ShouldAuditChanges())
-                    .Select(entry => CreateAuditChange(timestamp, entry))
+                    .Select(entry => CreateAuditChangeEvent(timestamp, entry))
                     .ToList();
 
                 ChangeTracker.AcceptAllChanges();
 
-                AuditChanges.AddRange(changes);
+                ChangeEvents.AddRange(changes);
 
                 result += base.SaveChanges(acceptAllChangesOnSuccess);
 
@@ -378,12 +402,12 @@ namespace Maker.Identity.Data
 
                 var changes = ChangeTracker.Entries()
                     .Where(_ => _.ShouldAuditChanges())
-                    .Select(entry => CreateAuditChange(timestamp, entry))
+                    .Select(entry => CreateAuditChangeEvent(timestamp, entry))
                     .ToList();
 
                 ChangeTracker.AcceptAllChanges();
 
-                await AuditChanges.AddRangeAsync(changes, cancellationToken).ConfigureAwait(false);
+                await ChangeEvents.AddRangeAsync(changes, cancellationToken).ConfigureAwait(false);
 
                 result += await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false);
 
@@ -393,25 +417,25 @@ namespace Maker.Identity.Data
             return result;
         }
 
-        private static AuditChange CreateAuditChange(DateTime timestamp, EntityEntry entityEntry)
+        private static ChangeEvent CreateAuditChangeEvent(DateTime timestamp, EntityEntry entityEntry)
         {
             var keyValues = new Dictionary<string, object>();
             var oldValues = new Dictionary<string, object>();
             var newValues = new Dictionary<string, object>();
 
-            var changeType = AuditChangeType.Unknown;
+            var changeType = ChangeType.Unknown;
             switch (entityEntry.State)
             {
                 case EntityState.Added:
-                    changeType = AuditChangeType.Insert;
+                    changeType = ChangeType.Insert;
                     break;
 
                 case EntityState.Modified:
-                    changeType = AuditChangeType.Update;
+                    changeType = ChangeType.Update;
                     break;
 
                 case EntityState.Deleted:
-                    changeType = AuditChangeType.Delete;
+                    changeType = ChangeType.Delete;
                     break;
             }
 
@@ -429,7 +453,7 @@ namespace Maker.Identity.Data
                     keyValues[propertyName] = property.CurrentValue;
                 }
 
-                if (property.Metadata.SkipAudit())
+                if (property.Metadata.SkipChangeAudit())
                     continue;
 
                 switch (entityEntry.State)
@@ -459,7 +483,7 @@ namespace Maker.Identity.Data
                 principalKey = hasher.ComputeHash(Encoding.UTF8.GetBytes(keyValuesJson));
             }
 
-            return new AuditChange
+            return new ChangeEvent
             {
                 TimestampUtc = timestamp,
                 ChangeType = changeType,
