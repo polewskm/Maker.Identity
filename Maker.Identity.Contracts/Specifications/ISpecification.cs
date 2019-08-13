@@ -1,19 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace Maker.Identity.Contracts.Specifications
 {
-    public interface ISpecification<T>
+    public interface ISpecification<TEntity>
     {
         bool DisableTracking { get; }
 
-        Expression<Func<T, bool>> Criteria { get; }
+        Expression<Func<TEntity, bool>> Criteria { get; }
 
-        Expression<Func<T, object>> OrderBy { get; }
+        IReadOnlyList<IOrderBySpecification<TEntity>> OrderBySpecifications { get; }
 
-        bool OrderByDescending { get; }
-
-        bool EnablePaging { get; }
+        bool IsPagingEnabled { get; }
 
         int Skip { get; }
 

@@ -44,14 +44,12 @@ namespace Maker.Identity.Data.Services
                 query = query.Where(specification.Criteria);
             }
 
-            if (specification.OrderBy != null && !options.HasFlag(SpecificationQueryBuilderOptions.IgnoreOrderBy))
+            if (!options.HasFlag(SpecificationQueryBuilderOptions.IgnoreOrderBy))
             {
-                query = specification.OrderByDescending
-                    ? query.OrderByDescending(specification.OrderBy)
-                    : query.OrderBy(specification.OrderBy);
+                query = specification.OrderBySpecifications.Aggregate(query, (current, next) => next.Apply(current));
             }
 
-            if (specification.EnablePaging)
+            if (specification.IsPagingEnabled)
             {
                 query = query
                     .Skip(specification.Skip)

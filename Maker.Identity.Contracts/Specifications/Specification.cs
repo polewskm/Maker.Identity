@@ -1,44 +1,41 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace Maker.Identity.Contracts.Specifications
 {
-    public class Specification<T> : ISpecification<T>
+    public class Specification<TEntity> : ISpecification<TEntity>
     {
+        private readonly List<IOrderBySpecification<TEntity>> _orderBySpecifications = new List<IOrderBySpecification<TEntity>>();
+
         public bool DisableTracking { get; set; }
 
-        public Expression<Func<T, bool>> Criteria { get; set; }
+        public Expression<Func<TEntity, bool>> Criteria { get; set; }
 
-        public Expression<Func<T, object>> OrderBy { get; set; }
+        public IReadOnlyList<IOrderBySpecification<TEntity>> OrderBySpecifications => _orderBySpecifications;
 
-        public bool OrderByDescending { get; set; }
-
-        public bool EnablePaging { get; private set; }
+        public bool IsPagingEnabled { get; private set; }
 
         public int Skip { get; private set; }
 
         public int Take { get; private set; }
 
-        public virtual Specification<T> SetCriteria(Expression<Func<T, bool>> criteria)
+        public virtual Specification<TEntity> OrderBy<TProperty>(Expression<Func<TEntity, TProperty>> expression, bool descending = false)
         {
-            Criteria = criteria;
+            _orderBySpecifications.Add(new OrderBySpecification<TEntity, TProperty>
+            {
+                Expression = expression,
+                Descending = descending,
+            });
 
             return this;
         }
 
-        public virtual Specification<T> SetOrderBy(Expression<Func<T, object>> orderBy, bool descending = false)
-        {
-            OrderBy = orderBy;
-            OrderByDescending = descending;
-
-            return this;
-        }
-
-        public virtual Specification<T> ApplyPaging(int skip, int take)
+        public virtual Specification<TEntity> Page(int skip, int take)
         {
             Skip = skip;
             Take = take;
-            EnablePaging = true;
+            IsPagingEnabled = true;
 
             return this;
         }
