@@ -353,7 +353,7 @@ namespace Maker.Identity.Data
 
                 AuditChanges.AddRange(changes);
 
-                base.SaveChanges(acceptAllChangesOnSuccess);
+                result += base.SaveChanges(acceptAllChangesOnSuccess);
 
                 transaction?.Commit();
             }
@@ -385,7 +385,7 @@ namespace Maker.Identity.Data
 
                 await AuditChanges.AddRangeAsync(changes, cancellationToken).ConfigureAwait(false);
 
-                await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false);
+                result += await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false);
 
                 transaction?.Commit();
             }
