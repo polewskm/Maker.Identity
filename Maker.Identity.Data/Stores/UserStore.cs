@@ -15,7 +15,6 @@ using Microsoft.AspNetCore.Identity;
 namespace Maker.Identity.Data.Stores
 {
     public class UserStore : StoreBase,
-        IProtectedUserStore<User>,
         IUserRoleStore<User>,
         IUserLoginStore<User>,
         IUserClaimStore<User>,
@@ -161,8 +160,6 @@ namespace Maker.Identity.Data.Stores
         {
             await UnitOfWork.UserRepository.AddAsync(user, cancellationToken).ConfigureAwait(false);
 
-            await UnitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
-
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -171,8 +168,6 @@ namespace Maker.Identity.Data.Stores
         {
             await UnitOfWork.UserRepository.UpdateAsync(user, cancellationToken).ConfigureAwait(false);
 
-            await UnitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
-
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -180,8 +175,6 @@ namespace Maker.Identity.Data.Stores
         public virtual async Task<IdentityResult> DeleteAsync(User user, CancellationToken cancellationToken)
         {
             await UnitOfWork.UserRepository.RemoveAsync(user, cancellationToken).ConfigureAwait(false);
-
-            await UnitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }

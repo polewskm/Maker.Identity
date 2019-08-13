@@ -40,8 +40,6 @@ namespace Maker.Identity.Data.Stores
         {
             await UnitOfWork.RoleRepository.AddAsync(role, cancellationToken).ConfigureAwait(false);
 
-            await UnitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
-
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -50,8 +48,6 @@ namespace Maker.Identity.Data.Stores
         {
             await UnitOfWork.RoleRepository.UpdateAsync(role, cancellationToken).ConfigureAwait(false);
 
-            await UnitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
-
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -59,8 +55,6 @@ namespace Maker.Identity.Data.Stores
         public virtual async Task<IdentityResult> DeleteAsync(Role role, CancellationToken cancellationToken)
         {
             await UnitOfWork.RoleRepository.RemoveAsync(role, cancellationToken).ConfigureAwait(false);
-
-            await UnitOfWork.CommitAsync(cancellationToken).ConfigureAwait(false);
 
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
