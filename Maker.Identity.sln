@@ -5,14 +5,16 @@ VisualStudioVersion = 16.0.29020.237
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maker.Identity", "Maker.Identity\Maker.Identity.csproj", "{D6A6C259-13F1-4D5A-81BC-6726571549D6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maker.Identity.Stores", "Maker.Identity.Stores\Maker.Identity.Stores.csproj", "{30771A27-D4A0-45B9-AD6E-4A8C13512E20}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{66AAFBB3-4F79-4334-9968-E82CFEDA446D}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maker.Identity.Contracts", "Maker.Identity.Contracts\Maker.Identity.Contracts.csproj", "{7398CE5A-01DD-4EB9-BCA1-D55301857F07}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maker.Identity.Data", "Maker.Identity.Data\Maker.Identity.Data.csproj", "{94285EAE-9ACF-4D47-B447-C347E39D58ED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,10 +26,14 @@ Global
 		{D6A6C259-13F1-4D5A-81BC-6726571549D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6A6C259-13F1-4D5A-81BC-6726571549D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6A6C259-13F1-4D5A-81BC-6726571549D6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{30771A27-D4A0-45B9-AD6E-4A8C13512E20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{30771A27-D4A0-45B9-AD6E-4A8C13512E20}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{30771A27-D4A0-45B9-AD6E-4A8C13512E20}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{30771A27-D4A0-45B9-AD6E-4A8C13512E20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7398CE5A-01DD-4EB9-BCA1-D55301857F07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7398CE5A-01DD-4EB9-BCA1-D55301857F07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7398CE5A-01DD-4EB9-BCA1-D55301857F07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7398CE5A-01DD-4EB9-BCA1-D55301857F07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94285EAE-9ACF-4D47-B447-C347E39D58ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94285EAE-9ACF-4D47-B447-C347E39D58ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94285EAE-9ACF-4D47-B447-C347E39D58ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94285EAE-9ACF-4D47-B447-C347E39D58ED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
