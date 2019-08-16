@@ -1,4 +1,4 @@
-﻿using Maker.Identity.Contracts.Audit;
+﻿using Maker.Identity.Contracts.Events;
 using Maker.Identity.Contracts.Repositories;
 using Maker.Identity.Data.Services;
 using Microsoft.EntityFrameworkCore;

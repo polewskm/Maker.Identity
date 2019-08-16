@@ -1,4 +1,4 @@
-﻿namespace Maker.Identity.Contracts.Audit
+﻿namespace Maker.Identity.Contracts.Events
 {
     public class AuthEvent : EventBase
     {

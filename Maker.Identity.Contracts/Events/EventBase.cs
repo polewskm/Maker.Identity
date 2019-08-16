@@ -1,7 +1,7 @@
 ﻿using System;
 using Maker.Identity.Contracts.Entities;
 
-namespace Maker.Identity.Contracts.Audit
+namespace Maker.Identity.Contracts.Events
 {
     public class EventBase : ISupportId
     {

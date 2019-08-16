@@ -1,4 +1,4 @@
-﻿namespace Maker.Identity.Contracts.Audit
+﻿namespace Maker.Identity.Contracts.Events
 {
     public static class EventIds
     {

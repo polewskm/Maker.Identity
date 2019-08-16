@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using Maker.Identity.Contracts.Audit;
 using Maker.Identity.Contracts.Entities;
+using Maker.Identity.Contracts.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;

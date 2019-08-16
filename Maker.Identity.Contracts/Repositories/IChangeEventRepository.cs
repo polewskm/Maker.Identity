@@ -1,4 +1,4 @@
-﻿using Maker.Identity.Contracts.Audit;
+﻿using Maker.Identity.Contracts.Events;
 
 namespace Maker.Identity.Contracts.Repositories
 {
