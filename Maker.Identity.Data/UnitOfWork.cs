@@ -22,6 +22,7 @@ namespace Maker.Identity.Data
             await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        public IAuthEventRepository AuthEventRepository { get; }
         public IChangeEventRepository ChangeEventRepository { get; }
         public IUserRepository UserRepository { get; }
         public IUserClaimRepository UserClaimRepository { get; }
