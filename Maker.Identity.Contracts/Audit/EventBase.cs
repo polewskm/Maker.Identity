@@ -3,7 +3,7 @@ using Maker.Identity.Contracts.Entities;
 
 namespace Maker.Identity.Contracts.Audit
 {
-    public class UserEvent : ISupportId
+    public class EventBase : ISupportId
     {
         public long Id { get; set; }
 
@@ -13,12 +13,8 @@ namespace Maker.Identity.Contracts.Audit
 
         public int EventId { get; set; }
 
-        public long UserId { get; set; }
-
-        public long? ClientId { get; set; }
-
         public string ActivityId { get; set; }
 
-        public string AuthenticationMethod { get; set; }
+        public string CorrelationId { get; set; }
     }
 }

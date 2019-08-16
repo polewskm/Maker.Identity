@@ -3,6 +3,7 @@ using IdGen;
 using Maker.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using NCode.SystemClock;
 
 namespace Maker.Identity
 {
@@ -15,8 +16,9 @@ namespace Maker.Identity
             optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Maker.Identity;Trusted_Connection=True;MultipleActiveResultSets=True", b => b.MigrationsAssembly(assemblyName));
 
             var idGenerator = new IdGenerator(0);
+            var systemClock = new SystemClockMillisecondsAccuracy();
 
-            return new MakerDbContext(optionsBuilder.Options, idGenerator);
+            return new MakerDbContext(optionsBuilder.Options, idGenerator, systemClock);
         }
 
     }

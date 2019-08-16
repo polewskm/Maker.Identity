@@ -1,16 +1,7 @@
-﻿using System;
-using Maker.Identity.Contracts.Entities;
-
-namespace Maker.Identity.Contracts.Audit
+﻿namespace Maker.Identity.Contracts.Audit
 {
-    public class ChangeEvent : ISupportId
+    public class ChangeEvent : EventBase
     {
-        public long Id { get; set; }
-
-        public DateTime TimestampUtc { get; set; }
-
-        public ChangeType ChangeType { get; set; }
-
         public string UserName { get; set; }
 
         public string PrincipalName { get; set; }

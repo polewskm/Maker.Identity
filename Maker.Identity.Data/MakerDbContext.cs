@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -14,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage;
+using NCode.SystemClock;
 using Newtonsoft.Json;
 
 namespace Maker.Identity.Data
@@ -24,27 +26,30 @@ namespace Maker.Identity.Data
     public class MakerDbContext : DbContext
     {
         private readonly IdValueGenerator _idValueGenerator;
+        private readonly ISystemClock _systemClock;
 
         /// <summary>
         /// Initializes a new instance of <see cref="MakerDbContext"/>.
         /// </summary>
         /// <param name="options">The options to be used by a <see cref="DbContext"/>.</param>
         /// <param name="idGenerator"></param>
-        public MakerDbContext(DbContextOptions options, IIdGenerator<long> idGenerator)
+        /// <param name="systemClock"></param>
+        public MakerDbContext(DbContextOptions options, IIdGenerator<long> idGenerator, ISystemClock systemClock)
             : base(options)
         {
             _idValueGenerator = new IdValueGenerator(idGenerator);
+            _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="DbSet{TEntity}" /> of audit change events.
+        /// Gets or sets the <see cref="DbSet{TEntity}" /> of change events.
         /// </summary>
         public DbSet<ChangeEvent> ChangeEvents { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="DbSet{TEntity}" /> of audit user events.
+        /// Gets or sets the <see cref="DbSet{TEntity}" /> of authentication events.
         /// </summary>
-        public DbSet<UserEvent> UserEvents { get; set; }
+        public DbSet<AuthEvent> AuthEvents { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}" /> of users.
@@ -126,29 +131,35 @@ namespace Maker.Identity.Data
 
                 entityBuilder.HasKey(_ => _.Id);
                 entityBuilder.HasIndex(_ => new { _.PrincipalName, _.PrincipalKey, _.TimestampUtc }).IsUnique();
+                entityBuilder.HasIndex(_ => _.CorrelationId);
 
                 entityBuilder.Property(_ => _.Id).UseIdGen();
-                entityBuilder.Property(_ => _.ChangeType).HasConversion<byte>();
+                entityBuilder.Property(_ => _.EventType).HasConversion<int>().IsRequired();
+                entityBuilder.Property(_ => _.ActivityId).HasMaxLength(100).IsUnicode(false);
+                entityBuilder.Property(_ => _.CorrelationId).HasMaxLength(100).IsUnicode(false);
+
                 entityBuilder.Property(_ => _.UserName).HasMaxLength(256).IsUnicode(false);
                 entityBuilder.Property(_ => _.PrincipalName).HasMaxLength(256).IsRequired().IsUnicode(false);
                 entityBuilder.Property(_ => _.PrincipalKey).HasMaxLength(32).IsFixedLength().IsRequired().IsUnicode(false);
                 entityBuilder.Property(_ => _.KeyValues).IsRequired().IsUnicode(false);
             });
 
-            modelBuilder.Entity<UserEvent>(entityBuilder =>
+            modelBuilder.Entity<AuthEvent>(entityBuilder =>
             {
-                entityBuilder.ToTable("UserEvents", schemaName).SkipChangeAudit();
+                entityBuilder.ToTable("AuthEvents", schemaName).SkipChangeAudit();
 
                 entityBuilder.HasKey(_ => _.Id);
                 entityBuilder.HasIndex(_ => new { _.UserId, _.TimestampUtc });
-                entityBuilder.HasIndex(_ => _.ActivityId);
+                entityBuilder.HasIndex(_ => _.CorrelationId);
 
                 entityBuilder.Property(_ => _.Id).UseIdGen();
                 entityBuilder.Property(_ => _.EventType).HasConversion<int>().IsRequired();
-                entityBuilder.Property(_ => _.ActivityId).HasMaxLength(50).IsUnicode(false);
-                entityBuilder.Property(_ => _.AuthenticationMethod).HasMaxLength(50).IsUnicode(false);
+                entityBuilder.Property(_ => _.ActivityId).HasMaxLength(100).IsUnicode(false);
+                entityBuilder.Property(_ => _.CorrelationId).HasMaxLength(100).IsUnicode(false);
 
-                entityBuilder.HasOne<User>().WithMany().HasForeignKey(_ => _.UserId).IsRequired();
+                entityBuilder.Property(_ => _.AuthMethod).HasMaxLength(50).IsUnicode(false);
+
+                entityBuilder.HasOne<User>().WithMany().HasForeignKey(_ => _.UserId);
                 entityBuilder.HasOne<Client>().WithMany().HasForeignKey(_ => _.ClientId);
             });
 
@@ -356,7 +367,7 @@ namespace Maker.Identity.Data
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
             int result;
-            var timestamp = DateTime.UtcNow;
+            var timestamp = _systemClock.UtcNow;
 
             IDbContextTransaction transaction = null;
             if (Database.CurrentTransaction == null && Database.GetEnlistedTransaction() == null && Transaction.Current == null)
@@ -370,7 +381,7 @@ namespace Maker.Identity.Data
 
                 var changes = ChangeTracker.Entries()
                     .Where(_ => _.ShouldAuditChanges())
-                    .Select(entry => CreateAuditChangeEvent(timestamp, entry))
+                    .Select(entry => CreateChangeEvent(timestamp, entry))
                     .ToList();
 
                 ChangeTracker.AcceptAllChanges();
@@ -388,7 +399,7 @@ namespace Maker.Identity.Data
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             int result;
-            var timestamp = DateTime.UtcNow;
+            var timestamp = _systemClock.UtcNow;
 
             IDbContextTransaction transaction = null;
             if (Database.CurrentTransaction == null && Database.GetEnlistedTransaction() == null && Transaction.Current == null)
@@ -402,7 +413,7 @@ namespace Maker.Identity.Data
 
                 var changes = ChangeTracker.Entries()
                     .Where(_ => _.ShouldAuditChanges())
-                    .Select(entry => CreateAuditChangeEvent(timestamp, entry))
+                    .Select(entry => CreateChangeEvent(timestamp, entry))
                     .ToList();
 
                 ChangeTracker.AcceptAllChanges();
@@ -417,25 +428,34 @@ namespace Maker.Identity.Data
             return result;
         }
 
-        private static ChangeEvent CreateAuditChangeEvent(DateTime timestamp, EntityEntry entityEntry)
+        private static ChangeEvent CreateChangeEvent(DateTimeOffset timestamp, EntityEntry entityEntry)
         {
+            var activity = Activity.Current;
+            var activityId = activity.Id;
+            var correlationId = activity.GetBaggageItem("Id");
+            var legacyCorrelationId = Trace.CorrelationManager.ActivityId;
+            if (string.IsNullOrEmpty(correlationId) && legacyCorrelationId != Guid.Empty)
+            {
+                correlationId = legacyCorrelationId.ToString();
+            }
+
             var keyValues = new Dictionary<string, object>();
             var oldValues = new Dictionary<string, object>();
             var newValues = new Dictionary<string, object>();
 
-            var changeType = ChangeType.Unknown;
+            var eventId = 0;
             switch (entityEntry.State)
             {
                 case EntityState.Added:
-                    changeType = ChangeType.Insert;
+                    eventId = EventIds.ChangeAuditInsert;
                     break;
 
                 case EntityState.Modified:
-                    changeType = ChangeType.Update;
+                    eventId = EventIds.ChangeAuditUpdate;
                     break;
 
                 case EntityState.Deleted:
-                    changeType = ChangeType.Delete;
+                    eventId = EventIds.ChangeAuditDelete;
                     break;
             }
 
@@ -485,8 +505,12 @@ namespace Maker.Identity.Data
 
             return new ChangeEvent
             {
-                TimestampUtc = timestamp,
-                ChangeType = changeType,
+                TimestampUtc = timestamp.UtcDateTime,
+                EventType = EventTypes.ChangeAudit,
+                EventId = eventId,
+                ActivityId = activityId,
+                CorrelationId = correlationId,
+                UserName = "TODO",
                 PrincipalName = principalName,
                 PrincipalKey = principalKey,
                 KeyValues = keyValuesJson,

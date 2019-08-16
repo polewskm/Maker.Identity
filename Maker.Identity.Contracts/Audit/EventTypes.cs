@@ -8,5 +8,6 @@
         Information = 4,
         SuccessAudit = 8,
         FailureAudit = 16,
+        ChangeAudit = 32,
     }
 }
