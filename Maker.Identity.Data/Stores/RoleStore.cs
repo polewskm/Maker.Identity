@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Maker.Identity.Contracts;
 using Maker.Identity.Contracts.Entities;
+using Maker.Identity.Contracts.Repositories;
 using Maker.Identity.Contracts.Specifications;
 using Microsoft.AspNetCore.Identity;
 
@@ -13,10 +14,14 @@ namespace Maker.Identity.Data.Stores
 {
     public class RoleStore : StoreBase, IRoleClaimStore<Role>
     {
+        private readonly IRepository<Role> _roleRepository;
+        private readonly IRepository<RoleClaim> _roleClaimRepository;
+
         public RoleStore(IdentityErrorDescriber describer, IUnitOfWork unitOfWork)
             : base(describer, unitOfWork)
         {
-            // nothing
+            _roleRepository = unitOfWork.GetRepository<Role>();
+            _roleClaimRepository = unitOfWork.GetRepository<RoleClaim>();
         }
 
         /// <summary>
@@ -38,7 +43,7 @@ namespace Maker.Identity.Data.Stores
         /// <inheritdoc/>
         public virtual async Task<IdentityResult> CreateAsync(Role role, CancellationToken cancellationToken)
         {
-            await UnitOfWork.RoleRepository.AddAsync(role, cancellationToken).ConfigureAwait(false);
+            await _roleRepository.AddAsync(role, cancellationToken).ConfigureAwait(false);
 
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -46,7 +51,7 @@ namespace Maker.Identity.Data.Stores
         /// <inheritdoc/>
         public virtual async Task<IdentityResult> UpdateAsync(Role role, CancellationToken cancellationToken)
         {
-            await UnitOfWork.RoleRepository.UpdateAsync(role, cancellationToken).ConfigureAwait(false);
+            await _roleRepository.UpdateAsync(role, cancellationToken).ConfigureAwait(false);
 
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -54,7 +59,7 @@ namespace Maker.Identity.Data.Stores
         /// <inheritdoc/>
         public virtual async Task<IdentityResult> DeleteAsync(Role role, CancellationToken cancellationToken)
         {
-            await UnitOfWork.RoleRepository.RemoveAsync(role, cancellationToken).ConfigureAwait(false);
+            await _roleRepository.RemoveAsync(role, cancellationToken).ConfigureAwait(false);
 
             return await TrySaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -140,7 +145,7 @@ namespace Maker.Identity.Data.Stores
             {
                 Criteria = role => role.Id == id
             };
-            return await UnitOfWork.RoleRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
+            return await _roleRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -156,7 +161,7 @@ namespace Maker.Identity.Data.Stores
             {
                 Criteria = role => role.NormalizedName == normalizedRoleName
             };
-            return await UnitOfWork.RoleRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
+            return await _roleRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion
@@ -177,7 +182,7 @@ namespace Maker.Identity.Data.Stores
                 Criteria = roleClaim => roleClaim.RoleId == role.Id,
                 Projection = roleClaim => new Claim(roleClaim.ClaimType, roleClaim.ClaimValue)
             };
-            var results = await UnitOfWork.RoleClaimRepository.ListAsync(specification, cancellationToken).ConfigureAwait(false);
+            var results = await _roleClaimRepository.ListAsync(specification, cancellationToken).ConfigureAwait(false);
             return results.ToList();
         }
 
@@ -194,7 +199,7 @@ namespace Maker.Identity.Data.Stores
 
             var newRoleClaim = CreateRoleClaim(role, claim);
 
-            await UnitOfWork.RoleClaimRepository.AddAsync(newRoleClaim, cancellationToken).ConfigureAwait(false);
+            await _roleClaimRepository.AddAsync(newRoleClaim, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -212,7 +217,7 @@ namespace Maker.Identity.Data.Stores
             {
                 Criteria = roleClaim => roleClaim.RoleId == role.Id && roleClaim.ClaimType == claim.Type && roleClaim.ClaimValue == claim.Value
             };
-            await UnitOfWork.RoleClaimRepository.RemoveAsync(specification, cancellationToken).ConfigureAwait(false);
+            await _roleClaimRepository.RemoveAsync(specification, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion

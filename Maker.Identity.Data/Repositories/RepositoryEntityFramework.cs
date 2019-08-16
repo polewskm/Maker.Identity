@@ -2,17 +2,24 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Maker.Identity.Contracts.Repositories;
 using Maker.Identity.Contracts.Specifications;
 using Maker.Identity.Data.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Maker.Identity.Data.Repositories
 {
-    public class RepositoryEntityFramework<TContext, TEntity> : RepositoryBase<TEntity>
+    public interface IRepositoryContext<out TContext> : IRepository
+        where TContext : class
+    {
+        TContext Context { get; }
+    }
+
+    public class RepositoryEntityFramework<TContext, TEntity> : RepositoryBase<TEntity>, IRepositoryContext<TContext>
         where TContext : DbContext
         where TEntity : class
     {
-        protected TContext Context { get; }
+        public TContext Context { get; }
 
         protected ISpecificationQueryBuilder SpecificationQueryBuilder { get; }
 

@@ -8,34 +8,6 @@ namespace Maker.Identity.Contracts
     {
         Task CommitAsync(CancellationToken cancellationToken = default);
 
-        IAuthEventRepository AuthEventRepository { get; }
-
-        IChangeEventRepository ChangeEventRepository { get; }
-
-        IUserRepository UserRepository { get; }
-
-        IUserClaimRepository UserClaimRepository { get; }
-
-        IUserLoginRepository UserLoginRepository { get; }
-
-        IUserRoleRepository UserRoleRepository { get; }
-
-        IUserSecretRepository UserSecretRepository { get; }
-
-        IUserTokenRepository UserTokenRepository { get; }
-
-        IRoleRepository RoleRepository { get; }
-
-        IRoleClaimRepository RoleClaimRepository { get; }
-
-        IClientRepository ClientRepository { get; }
-
-        IClientTagRepository ClientTagRepository { get; }
-
-        IClientSecretRepository ClientSecretRepository { get; }
-
-        ISecretRepository SecretRepository { get; }
-
-        ISecretTagRepository SecretTagRepository { get; }
+        IRepository<TEntity> GetRepository<TEntity>() where TEntity : class;
     }
 }
