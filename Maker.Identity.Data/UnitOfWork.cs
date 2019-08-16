@@ -13,7 +13,7 @@ namespace Maker.Identity.Data
     public class UnitOfWork<TContext> : IUnitOfWork
         where TContext : DbContext
     {
-        private readonly IDictionary<Type, IRepository> _repositories;
+        private readonly IReadOnlyDictionary<Type, IRepositoryContext<TContext>> _repositories;
 
         public TContext Context { get; }
 
@@ -21,7 +21,24 @@ namespace Maker.Identity.Data
         {
             Context = context ?? throw new ArgumentNullException(nameof(context));
 
-            _repositories = repositories.ToDictionary(repository => repository.EntityType, repository => (IRepository)repository);
+            // make sure the specified repositories uses the same context and are of the correct entity type
+            var typeOfRepositoryOpenGeneric = typeof(IRepository<>);
+            var filteredRepositories = repositories.Where(repository =>
+            {
+                if (!ReferenceEquals(repository.Context, context))
+                    return false;
+
+                var typeOfRepositoryClosedGeneric = typeOfRepositoryOpenGeneric.MakeGenericType(repository.EntityType);
+                return typeOfRepositoryClosedGeneric.IsInstanceOfType(repository);
+            });
+
+            // ToDictionary will blow up if multiple repositories exist with the same entity type
+            // so only return distinct repositories by entity type (i.e. the first occurrence)
+            var uniqueRepositories = filteredRepositories
+                .GroupBy(repository => repository.EntityType)
+                .Select(grouping => grouping.First());
+
+            _repositories = uniqueRepositories.ToDictionary(repository => repository.EntityType, repository => repository);
         }
 
         public virtual async Task CommitAsync(CancellationToken cancellationToken = default)
@@ -31,18 +48,13 @@ namespace Maker.Identity.Data
 
         public virtual IRepository<TEntity> GetRepository<TEntity>() where TEntity : class
         {
-            IRepository<TEntity> repository = null;
-            if (_repositories.TryGetValue(typeof(TEntity), out var repositoryBase))
-            {
-                repository = repositoryBase as IRepository<TEntity>;
-            }
-
-            if (repository == null)
+            if (!_repositories.TryGetValue(typeof(TEntity), out var repositoryBase))
             {
                 throw new InvalidOperationException("TODO");
             }
 
-            return repository;
+            // this cast is guaranteed to succeed because of the checks in the constructor
+            return (IRepository<TEntity>)repositoryBase;
         }
 
     }
