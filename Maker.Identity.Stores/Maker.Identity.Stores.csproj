@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Maker.Identity.Contracts\Maker.Identity.Contracts.csproj" />
+        <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="2.2.0" />
+    </ItemGroup>
+
+</Project>

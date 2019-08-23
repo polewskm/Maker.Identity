@@ -13,15 +13,15 @@ namespace Maker.Identity.Data.Repositories
     {
         public Type EntityType => typeof(TEntity);
 
-        public abstract Task<TEntity> FindAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default);
+        public abstract Task<TEntity> FindAsync(IQueryConfiguration<TEntity> queryConfiguration, CancellationToken cancellationToken = default);
 
-        public abstract Task<TOut> FindAsync<TOut>(ISpecification<TEntity, TOut> specification, CancellationToken cancellationToken = default) where TOut : class;
+        public abstract Task<TOut> FindAsync<TOut>(IQueryConfiguration<TEntity, TOut> queryConfiguration, CancellationToken cancellationToken = default) where TOut : class;
 
-        public abstract Task<IReadOnlyList<TEntity>> ListAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default);
+        public abstract Task<IReadOnlyList<TEntity>> ListAsync(IQueryConfiguration<TEntity> queryConfiguration, CancellationToken cancellationToken = default);
 
-        public abstract Task<IReadOnlyList<TOut>> ListAsync<TOut>(ISpecification<TEntity, TOut> specification, CancellationToken cancellationToken = default) where TOut : class;
+        public abstract Task<IReadOnlyList<TOut>> ListAsync<TOut>(IQueryConfiguration<TEntity, TOut> queryConfiguration, CancellationToken cancellationToken = default) where TOut : class;
 
-        public abstract Task<int> CountAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default);
+        public abstract Task<int> CountAsync(IQueryConfiguration<TEntity> queryConfiguration, CancellationToken cancellationToken = default);
 
         #region Add Members
 
@@ -87,9 +87,9 @@ namespace Maker.Identity.Data.Repositories
 
         #region Remove Members
 
-        public virtual async Task RemoveAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default)
+        public virtual async Task RemoveAsync(IQueryConfiguration<TEntity> queryConfiguration, CancellationToken cancellationToken = default)
         {
-            var results = await ListAsync(specification, cancellationToken).ConfigureAwait(false);
+            var results = await ListAsync(queryConfiguration, cancellationToken).ConfigureAwait(false);
             foreach (var entity in results)
             {
                 await RemoveAsync(entity, cancellationToken).ConfigureAwait(false);

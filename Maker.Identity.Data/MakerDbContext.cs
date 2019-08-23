@@ -366,7 +366,7 @@ namespace Maker.Identity.Data
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
-            int result;
+            int rowsAffected;
             var timestamp = _systemClock.UtcNow;
 
             IDbContextTransaction transaction = null;
@@ -377,7 +377,7 @@ namespace Maker.Identity.Data
 
             using (transaction)
             {
-                result = base.SaveChanges(false);
+                rowsAffected = base.SaveChanges(false);
 
                 var changes = ChangeTracker.Entries()
                     .Where(_ => _.ShouldAuditChanges())
@@ -388,12 +388,12 @@ namespace Maker.Identity.Data
 
                 ChangeEvents.AddRange(changes);
 
-                result += base.SaveChanges(acceptAllChangesOnSuccess);
+                rowsAffected += base.SaveChanges(acceptAllChangesOnSuccess);
 
                 transaction?.Commit();
             }
 
-            return result;
+            return rowsAffected;
         }
 
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)

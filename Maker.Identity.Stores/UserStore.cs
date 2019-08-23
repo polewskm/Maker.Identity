@@ -9,10 +9,10 @@ using Maker.Identity.Contracts;
 using Maker.Identity.Contracts.Entities;
 using Maker.Identity.Contracts.Repositories;
 using Maker.Identity.Contracts.Specifications;
-using Maker.Identity.Data.Extensions;
+using Maker.Identity.Stores.Extensions;
 using Microsoft.AspNetCore.Identity;
 
-namespace Maker.Identity.Data.Stores
+namespace Maker.Identity.Stores
 {
     public class UserStore : StoreBase,
         IUserRoleStore<User>,
@@ -123,11 +123,10 @@ namespace Maker.Identity.Data.Stores
         /// <returns>The role if it exists.</returns>
         protected virtual Task<Role> FindRoleAsync(string normalizedRoleName, CancellationToken cancellationToken)
         {
-            var specification = new Specification<Role>
-            {
-                Criteria = role => role.NormalizedName == normalizedRoleName
-            };
-            return _roleRepository.FindAsync(specification, cancellationToken);
+            var query = Query<Role>.Build(configure => configure
+                .Where(role => role.NormalizedName == normalizedRoleName));
+
+            return _roleRepository.FindAsync(query, cancellationToken);
         }
 
         /// <summary>
@@ -139,11 +138,10 @@ namespace Maker.Identity.Data.Stores
         /// <returns>The user role if it exists.</returns>
         protected virtual Task<UserRole> FindUserRoleAsync(long userId, long roleId, CancellationToken cancellationToken)
         {
-            var specification = new Specification<UserRole>
-            {
-                Criteria = userRole => userRole.UserId == userId && userRole.RoleId == roleId
-            };
-            return _userRoleRepository.FindAsync(specification, cancellationToken);
+            var query = Query<UserRole>.Build(configure => configure
+                .Where(userRole => userRole.UserId == userId && userRole.RoleId == roleId));
+
+            return _userRoleRepository.FindAsync(query, cancellationToken);
         }
 
         /// <summary>
@@ -156,11 +154,12 @@ namespace Maker.Identity.Data.Stores
         /// <returns>The user token if it exists.</returns>
         protected virtual Task<UserToken> FindTokenAsync(User user, string loginProvider, string name, CancellationToken cancellationToken)
         {
-            var specification = new Specification<UserToken>
-            {
-                Criteria = userToken => userToken.UserId == user.Id && userToken.LoginProvider == loginProvider && userToken.Name == name
-            };
-            return _userTokenRepository.FindAsync(specification, cancellationToken);
+            var query = Query<UserToken>.Build(configure => configure
+                .Where(userToken => userToken.UserId == user.Id &&
+                                    userToken.LoginProvider == loginProvider &&
+                                    userToken.Name == name));
+
+            return _userTokenRepository.FindAsync(query, cancellationToken);
         }
 
         #endregion
@@ -278,11 +277,10 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<User>
-            {
-                Criteria = user => user.NormalizedUserName == normalizedUserName
-            };
-            return await _userRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<User>.Build(configure => configure
+                .Where(user => user.NormalizedUserName == normalizedUserName));
+
+            return await _userRepository.FindAsync(query, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion
@@ -322,11 +320,11 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserRole>
-            {
-                Criteria = userRole => userRole.UserId == user.Id && userRole.Role.NormalizedName == normalizedRoleName
-            };
-            await _userRoleRepository.RemoveAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserRole>.Build(configure => configure
+                .Where(userRole => userRole.UserId == user.Id &&
+                                   userRole.Role.NormalizedName == normalizedRoleName));
+
+            await _userRoleRepository.RemoveAsync(query, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -338,13 +336,13 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserRole, string>
-            {
-                Criteria = userRole => userRole.UserId == user.Id,
-                Projection = userRole => userRole.Role.Name,
-            };
-            var results = await _userRoleRepository.ListAsync(specification, cancellationToken).ConfigureAwait(false);
-            return results.Distinct().ToList();
+            var query = Query<UserRole>.Build(configure => configure
+                .Where(userRole => userRole.UserId == user.Id)
+                .Select(userRole => userRole.Role.Name)
+                .Output(output => output.Distinct()));
+
+            var results = await _userRoleRepository.ListAsync(query, cancellationToken).ConfigureAwait(false);
+            return results.ToList();
         }
 
         /// <inheritdoc/>
@@ -358,11 +356,11 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserRole>
-            {
-                Criteria = userRole => userRole.UserId == user.Id && userRole.Role.NormalizedName == normalizedRoleName
-            };
-            var result = await _userRoleRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserRole>.Build(configure => configure
+                .Where(userRole => userRole.UserId == user.Id &&
+                                   userRole.Role.NormalizedName == normalizedRoleName));
+
+            var result = await _userRoleRepository.FindAsync(query, cancellationToken).ConfigureAwait(false);
             return result != null;
         }
 
@@ -375,12 +373,11 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserRole, User>
-            {
-                Criteria = userRole => userRole.Role.NormalizedName == normalizedRoleName,
-                Projection = userRole => userRole.User,
-            };
-            var results = await _userRoleRepository.ListAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserRole>.Build(configure => configure
+                .Where(userRole => userRole.Role.NormalizedName == normalizedRoleName)
+                .Select(userRole => userRole.User));
+
+            var results = await _userRoleRepository.ListAsync(query, cancellationToken).ConfigureAwait(false);
             return results.ToList();
         }
 
@@ -413,11 +410,12 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserLogin>
-            {
-                Criteria = userLogin => userLogin.LoginProvider == loginProvider && userLogin.ProviderKey == providerKey && userLogin.UserId == user.Id,
-            };
-            await _userLoginRepository.RemoveAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserLogin>.Build(configure => configure
+                .Where(userLogin => userLogin.LoginProvider == loginProvider &&
+                                    userLogin.ProviderKey == providerKey &&
+                                    userLogin.UserId == user.Id));
+
+            await _userLoginRepository.RemoveAsync(query, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -429,12 +427,11 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserLogin, UserLoginInfo>
-            {
-                Criteria = userLogin => userLogin.UserId == user.Id,
-                Projection = userLogin => new UserLoginInfo(userLogin.LoginProvider, userLogin.ProviderKey, userLogin.ProviderDisplayName),
-            };
-            var results = await _userLoginRepository.ListAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserLogin>.Build(configure => configure
+                .Where(userLogin => userLogin.UserId == user.Id)
+                .Select(userLogin => new UserLoginInfo(userLogin.LoginProvider, userLogin.ProviderKey, userLogin.ProviderDisplayName)));
+
+            var results = await _userLoginRepository.ListAsync(query, cancellationToken).ConfigureAwait(false);
             return results.ToList();
         }
 
@@ -444,12 +441,12 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserLogin, User>
-            {
-                Criteria = userLogin => userLogin.LoginProvider == loginProvider && userLogin.ProviderKey == providerKey,
-                Projection = userLogin => userLogin.User,
-            };
-            return await _userLoginRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserLogin>.Build(configure => configure
+                .Where(userLogin => userLogin.LoginProvider == loginProvider &&
+                                    userLogin.ProviderKey == providerKey)
+                .Select(userLogin => userLogin.User));
+
+            return await _userLoginRepository.FindAsync(query, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion
@@ -465,12 +462,11 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserClaim, Claim>
-            {
-                Criteria = userClaim => userClaim.UserId == user.Id,
-                Projection = userClaim => new Claim(userClaim.ClaimType, userClaim.ClaimValue),
-            };
-            var results = await _userClaimRepository.ListAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserClaim>.Build(configure => configure
+                .Where(userClaim => userClaim.UserId == user.Id)
+                .Select(userClaim => new Claim(userClaim.ClaimType, userClaim.ClaimValue)));
+
+            var results = await _userClaimRepository.ListAsync(query, cancellationToken).ConfigureAwait(false);
             return results.ToList();
         }
 
@@ -506,11 +502,12 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserClaim>
-            {
-                Criteria = userClaim => userClaim.UserId == user.Id && userClaim.ClaimType == claim.Type && userClaim.ClaimValue == claim.Value
-            };
-            var matchedClaims = await _userClaimRepository.ListAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserClaim>.Build(configure => configure
+                .Where(userClaim => userClaim.UserId == user.Id &&
+                                    userClaim.ClaimType == claim.Type &&
+                                    userClaim.ClaimValue == claim.Value));
+
+            var matchedClaims = await _userClaimRepository.ListAsync(query, cancellationToken).ConfigureAwait(false);
 
             foreach (var matchedClaim in matchedClaims)
             {
@@ -534,11 +531,12 @@ namespace Maker.Identity.Data.Stores
 
             foreach (var claim in claims)
             {
-                var specification = new Specification<UserClaim>
-                {
-                    Criteria = userClaim => userClaim.UserId == user.Id && userClaim.ClaimType == claim.Type && userClaim.ClaimValue == claim.Value
-                };
-                await _userClaimRepository.RemoveAsync(specification, cancellationToken).ConfigureAwait(false);
+                var query = Query<UserClaim>.Build(configure => configure
+                    .Where(userClaim => userClaim.UserId == user.Id &&
+                                        userClaim.ClaimType == claim.Type &&
+                                        userClaim.ClaimValue == claim.Value));
+
+                await _userClaimRepository.RemoveAsync(query, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -551,12 +549,12 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserClaim, User>
-            {
-                Criteria = userClaim => userClaim.ClaimType == claim.Type && userClaim.ClaimValue == claim.Value,
-                Projection = userClaim => userClaim.User
-            };
-            var results = await _userClaimRepository.ListAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserClaim>.Build(configure => configure
+                .Where(userClaim => userClaim.ClaimType == claim.Type &&
+                                    userClaim.ClaimValue == claim.Value)
+                .Select(userClaim => userClaim.User));
+
+            var results = await _userClaimRepository.ListAsync(query, cancellationToken).ConfigureAwait(false);
             return results.ToList();
         }
 
@@ -723,11 +721,10 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<User>
-            {
-                Criteria = user => user.NormalizedEmail == normalizedEmail
-            };
-            return await _userRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<User>.Build(configure => configure
+                .Where(user => user.NormalizedEmail == normalizedEmail));
+
+            return await _userRepository.FindAsync(query, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion
@@ -949,11 +946,12 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<UserToken>
-            {
-                Criteria = userToken => userToken.UserId == user.Id && userToken.LoginProvider == loginProvider && userToken.Name == name
-            };
-            await _userTokenRepository.RemoveAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<UserToken>.Build(configure => configure
+                .Where(userToken => userToken.UserId == user.Id &&
+                                    userToken.LoginProvider == loginProvider &&
+                                    userToken.Name == name));
+
+            await _userTokenRepository.RemoveAsync(query, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>

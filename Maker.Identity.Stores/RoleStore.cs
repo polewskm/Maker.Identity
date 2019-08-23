@@ -10,7 +10,7 @@ using Maker.Identity.Contracts.Repositories;
 using Maker.Identity.Contracts.Specifications;
 using Microsoft.AspNetCore.Identity;
 
-namespace Maker.Identity.Data.Stores
+namespace Maker.Identity.Stores
 {
     public class RoleStore : StoreBase, IRoleClaimStore<Role>
     {
@@ -141,11 +141,10 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<Role>
-            {
-                Criteria = role => role.Id == id
-            };
-            return await _roleRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<Role>.Build(configure => configure
+                .Where(role => role.Id == id));
+
+            return await _roleRepository.FindAsync(query, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -157,11 +156,10 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<Role>
-            {
-                Criteria = role => role.NormalizedName == normalizedRoleName
-            };
-            return await _roleRepository.FindAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<Role>.Build(configure => configure
+                .Where(role => role.NormalizedName == normalizedRoleName));
+
+            return await _roleRepository.FindAsync(query, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion
@@ -177,12 +175,11 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<RoleClaim, Claim>
-            {
-                Criteria = roleClaim => roleClaim.RoleId == role.Id,
-                Projection = roleClaim => new Claim(roleClaim.ClaimType, roleClaim.ClaimValue)
-            };
-            var results = await _roleClaimRepository.ListAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<RoleClaim>.Build(configure => configure
+                .Where(roleClaim => roleClaim.RoleId == role.Id)
+                .Select(roleClaim => new Claim(roleClaim.ClaimType, roleClaim.ClaimValue)));
+
+            var results = await _roleClaimRepository.ListAsync(query, cancellationToken).ConfigureAwait(false);
             return results.ToList();
         }
 
@@ -213,11 +210,12 @@ namespace Maker.Identity.Data.Stores
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
-            var specification = new Specification<RoleClaim>
-            {
-                Criteria = roleClaim => roleClaim.RoleId == role.Id && roleClaim.ClaimType == claim.Type && roleClaim.ClaimValue == claim.Value
-            };
-            await _roleClaimRepository.RemoveAsync(specification, cancellationToken).ConfigureAwait(false);
+            var query = Query<RoleClaim>.Build(configure => configure
+                .Where(roleClaim => roleClaim.RoleId == role.Id &&
+                                    roleClaim.ClaimType == claim.Type &&
+                                    roleClaim.ClaimValue == claim.Value));
+
+            await _roleClaimRepository.RemoveAsync(query, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion

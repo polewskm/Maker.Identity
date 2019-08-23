@@ -13,15 +13,15 @@ namespace Maker.Identity.Contracts.Repositories
 
     public interface IReadRepository<TEntity> : IRepository
     {
-        Task<TEntity> FindAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default);
+        Task<TEntity> FindAsync(IQueryConfiguration<TEntity> queryConfiguration, CancellationToken cancellationToken = default);
 
-        Task<TOut> FindAsync<TOut>(ISpecification<TEntity, TOut> specification, CancellationToken cancellationToken = default) where TOut : class;
+        Task<TOut> FindAsync<TOut>(IQueryConfiguration<TEntity, TOut> queryConfiguration, CancellationToken cancellationToken = default) where TOut : class;
 
-        Task<IReadOnlyList<TEntity>> ListAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<TEntity>> ListAsync(IQueryConfiguration<TEntity> queryConfiguration, CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<TOut>> ListAsync<TOut>(ISpecification<TEntity, TOut> specification, CancellationToken cancellationToken = default) where TOut : class;
+        Task<IReadOnlyList<TOut>> ListAsync<TOut>(IQueryConfiguration<TEntity, TOut> queryConfiguration, CancellationToken cancellationToken = default) where TOut : class;
 
-        Task<int> CountAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default);
+        Task<int> CountAsync(IQueryConfiguration<TEntity> queryConfiguration, CancellationToken cancellationToken = default);
     }
 
     public interface IRepository<TEntity> : IReadRepository<TEntity>
@@ -33,6 +33,6 @@ namespace Maker.Identity.Contracts.Repositories
 
         Task RemoveAsync(TEntity entity, CancellationToken cancellationToken = default);
 
-        Task RemoveAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default);
+        Task RemoveAsync(IQueryConfiguration<TEntity> queryConfiguration, CancellationToken cancellationToken = default);
     }
 }

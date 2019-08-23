@@ -44,7 +44,7 @@ namespace Maker.Identity.Data.Services
                 query = query.Where(specification.Criteria);
             }
 
-            if (!options.HasFlag(SpecificationQueryBuilderOptions.IgnoreOrderBy))
+            if (specification.OrderBySpecifications.Count > 0 && !options.HasFlag(SpecificationQueryBuilderOptions.IgnoreOrderBy))
             {
                 query = specification.OrderBySpecifications.Aggregate(query, (current, next) => next.Apply(current));
             }

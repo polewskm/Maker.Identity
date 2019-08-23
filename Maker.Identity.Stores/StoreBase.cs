@@ -1,12 +1,12 @@
 ﻿using System;
+using System.Data;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Maker.Identity.Contracts;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
-namespace Maker.Identity.Data.Stores
+namespace Maker.Identity.Stores
 {
     public abstract class StoreBase : IDisposable
     {
@@ -61,12 +61,17 @@ namespace Maker.Identity.Data.Stores
             {
                 await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DataException exception) when (IsConcurrencyError(exception))
             {
                 return IdentityResult.Failed(ErrorDescriber.ConcurrencyFailure());
             }
 
             return IdentityResult.Success;
+        }
+
+        private static bool IsConcurrencyError(Exception exception)
+        {
+            return exception.GetType().Name == "DbUpdateConcurrencyException";
         }
 
         /// <summary>

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Maker.Identity.Data.Extensions
+namespace Maker.Identity.Stores.Extensions
 {
     public static class DateTimeExtensions
     {

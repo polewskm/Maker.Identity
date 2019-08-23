@@ -12,22 +12,16 @@ namespace Maker.Identity.Contracts.Repositories
             where TKey : IEquatable<TKey>
             where TEntity : class, ISupportId<TKey>
         {
-            var specification = new Specification<TEntity>
-            {
-                Criteria = entity => entity.Id.Equals(id)
-            };
-            return repository.FindAsync(specification, cancellationToken);
+            var queryConfiguration = Query<TEntity>.Build(configurator => configurator.Where(entity => entity.Id.Equals(id)));
+            return repository.FindAsync(queryConfiguration, cancellationToken);
         }
 
         public static Task RemoveAsync<TEntity, TKey>(this IRepository<TEntity> repository, TKey id, CancellationToken cancellationToken = default)
             where TKey : IEquatable<TKey>
             where TEntity : class, ISupportId<TKey>
         {
-            var specification = new Specification<TEntity>
-            {
-                Criteria = entity => entity.Id.Equals(id)
-            };
-            return repository.RemoveAsync(specification, cancellationToken);
+            var queryConfiguration = Query<TEntity>.Build(configurator => configurator.Where(entity => entity.Id.Equals(id)));
+            return repository.RemoveAsync(queryConfiguration, cancellationToken);
         }
 
     }
