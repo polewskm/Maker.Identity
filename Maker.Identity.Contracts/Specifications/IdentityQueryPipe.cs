@@ -4,7 +4,7 @@ namespace Maker.Identity.Contracts.Specifications
 {
     public class IdentityQueryPipe<TEntity> : IQueryPipe<TEntity>
     {
-        public IQueryable<TEntity> Query(IQueryable<TEntity> queryRoot)
+        public virtual IQueryable<TEntity> Query(IQueryable<TEntity> queryRoot)
         {
             return queryRoot;
         }
